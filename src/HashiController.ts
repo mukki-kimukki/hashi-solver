@@ -1,6 +1,5 @@
 class HashiController{
     private hashiBoard:HashiBoard;
-    private isLands = new Map();
     constructor(url:string){
         this.hashiBoard = new HashiBoard(url);
     }
@@ -59,6 +58,6 @@ class HashiController{
                 }
             });
         });
-        console.log(describe.join('\n') + '\n\n');
+        describe.forEach((row) => console.log(row.join('') + '\n'));
     }
 }

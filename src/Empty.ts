@@ -55,10 +55,15 @@ class Empty{
 			}
 		}
 	}
-
+	/**
+	@returns [leftId,rightId]
+	*/
     public getVerNumId():[number,number]{
         return [this.leftNumId,this.rightNumId];
     }
+	/**
+	@returns [upId,downId]
+	*/
     public getHorNumId():[number,number]{
         return [this.upNumId,this.downNumId];
     }

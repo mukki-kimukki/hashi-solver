@@ -1,7 +1,8 @@
 class Num {
 
 	private id:number;
-	private address:number[];
+	private parentIslandId:number;
+	private address:[number,number];
 	private surNumId:[number,number,number,number] = [-1,-1,-1,-1];
 
 
@@ -28,6 +29,7 @@ class Num {
 	public constructor(y:number, x:number, board:number[][], idMap:number[][], id:number) {
 
 		this.id = id;
+		this.parentIslandId = id;
 		this.address = [y,x];
 		this.remainSelf = board[y][x];
 		if(board[y][x] == 1){
@@ -153,7 +155,15 @@ class Num {
 		return this.id;
 	}
 
-	public getAddress():number[]{
+	public getParentIslandId():number{
+		return this.parentIslandId;
+	}
+
+	public setParentIslandId(id:number):void{
+		this.parentIslandId = id;
+	}
+
+	public getAddress():[number,number]{
 		return this.address;
 	}
 
