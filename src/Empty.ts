@@ -1,4 +1,4 @@
-class Empty{
+export class Empty{
     private leftNumId:number = -1;
     private upNumId:number = -1;
     private rightNumId:number = -1;
@@ -48,7 +48,7 @@ class Empty{
 		while(y + pos < numIdMap.length) {
 			//下に数字を見つけた場合
 			if(numIdMap[y + pos][x] > 0) {
-                this.upNumId=numIdMap[y+pos][x];
+                this.downNumId=numIdMap[y+pos][x];
 				break;
 			}else {
 				pos++;
@@ -58,13 +58,13 @@ class Empty{
 	/**
 	@returns [leftId,rightId]
 	*/
-    public getVerNumId():[number,number]{
+    public getHorNumId():[number,number]{
         return [this.leftNumId,this.rightNumId];
     }
 	/**
 	@returns [upId,downId]
 	*/
-    public getHorNumId():[number,number]{
+    public getVerNumId():[number,number]{
         return [this.upNumId,this.downNumId];
     }
 }

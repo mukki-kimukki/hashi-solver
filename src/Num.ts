@@ -1,4 +1,4 @@
-class Num {
+export class Num {
 
 	private id:number;
 	private parentIslandId:number;
@@ -15,15 +15,11 @@ class Num {
     private remain4way:number[] = [0,0,0,0];
 
 
-	//自身が所属する島の末端かどうか
-	//[末端が自身のみ,一本引いた場合に唯一の末端（行き止まり）,二本引いた場合唯一の末端（行き止まり）]
-	private isEndSelf:boolean[] = [true,false,false];
-
 	//周囲が行き止まり（行き止まり予備軍）かどうか
 	private isEndSur:boolean[][]  		//boolean(4*3) 4方向(LeftUpRightDown)について何本(012)か引くと行き止まりになるか:初期値0は壁を想定してtrue
 	= [[true,false,false],[true,false,false],[true,false,false],[true,false,false]];
 
-	private isChecked:boolean = false;	//手筋チェック済フラグ：無駄な検証をスキップ
+	private isLogicChecked:boolean = false;	//手筋チェック済フラグ：無駄な検証をスキップ
 
 	
 	public constructor(y:number, x:number, board:number[][], idMap:number[][], id:number) {
@@ -32,11 +28,6 @@ class Num {
 		this.parentIslandId = id;
 		this.address = [y,x];
 		this.remainSelf = board[y][x];
-		if(board[y][x] == 1){
-			this.isEndSelf[1] = true;
-		}else if(board[y][x] == 2) {
-			this.isEndSelf[2] = true;
-		}
 
 		let pos:number = -1;						//縦または横の相対位置:左から調べるので初期値は-1
 		let tempNum:number;
@@ -50,17 +41,20 @@ class Num {
 				this.surNumId[0] = idMap[y][x+pos];
 				switch (tempNum){
 					case 2:				//2なら孤立シマ＋残り2本
-						this.remain4way[0] = 2;
-						this.isEndSur[0][2] = true;
+						this.remain4way[0] = Math.min(this.remainSelf,2);
+						if(tempNum > 1){
+							this.isEndSur[0][2] = true;
+						}
 						break;
 					case 1:				//1なら孤立シマ＋残り1本
 						this.remain4way[0] = 1;
 						this.isEndSur[0][1] = true;
 						break;
 					default:			//それ以外は引き本数残りが2で初期化
-						this.remain4way[0] = 2;
+						this.remain4way[0] = Math.min(this.remainSelf,2);
 						break;
 				}
+				this.isEndSur[0][0] = false;	//数字を見つけているので壁ではなくなる
 				break;
 			}else {
 				pos--;
@@ -78,17 +72,20 @@ class Num {
 				this.surNumId[2] = idMap[y][x + pos];
 				switch(tempNum) {
 					case 2:				//2なら孤立シマ＋残り2本
-						this.remain4way[2] = 2;
-						this.isEndSur[2][2] = true;
+						this.remain4way[2] = Math.min(this.remainSelf,2);
+						if(tempNum > 1){
+							this.isEndSur[2][2] = true;
+						}
 						break;
 					case 1:		//1なら孤立シマ＋残り1本
 						this.remain4way[2] = 1;
 						this.isEndSur[2][1] = true;
 						break;
 					default:					//それ以外は引き本数残りが2
-						this.remain4way[2] = 2;
+						this.remain4way[2] = Math.min(this.remainSelf,2);
 						break;
 				}
+				this.isEndSur[2][0] = false;	//数字を見つけているので壁ではなくなる
 				break;
 			}else {
 				pos++;
@@ -105,17 +102,20 @@ class Num {
 				this.surNumId[1] = idMap[y + pos][x];
 				switch (tempNum){
 					case 2:				//2なら孤立シマ＋残り2本
-						this.remain4way[0] = 2;
-						this.isEndSur[0][2] = true;
+						this.remain4way[1] = Math.min(this.remainSelf,2);
+						if(tempNum > 1){
+							this.isEndSur[1][2] = true;
+						}
 						break;
 					case 1:				//1なら孤立シマ＋残り1本
-						this.remain4way[0] = 1;
-						this.isEndSur[0][1] = true;
+						this.remain4way[1] = 1;
+						this.isEndSur[1][1] = true;
 						break;
 					default:			//それ以外は引き本数残りが2で初期化
-						this.remain4way[0] = 2;
+						this.remain4way[1] = Math.min(this.remainSelf,2);
 						break;
 				}
+				this.isEndSur[1][0] = false;	//数字を見つけているので壁ではなくなる
 				break;
 			}else {
 				pos--;
@@ -133,17 +133,20 @@ class Num {
 				this.surNumId[3] = idMap[y + pos][x];
 				switch (tempNum){
 					case 2:				//2なら孤立シマ＋残り2本
-						this.remain4way[0] = 2;
-						this.isEndSur[0][2] = true;
+						this.remain4way[3] = Math.min(this.remainSelf,2);
+						if(tempNum > 1){
+							this.isEndSur[3][2] = true;
+						}
 						break;
 					case 1:				//1なら孤立シマ＋残り1本
-						this.remain4way[0] = 1;
-						this.isEndSur[0][1] = true;
+						this.remain4way[3] = 1;
+						this.isEndSur[3][1] = true;
 						break;
 					default:			//それ以外は引き本数残りが2で初期化
-						this.remain4way[0] = 2;
+						this.remain4way[3] = Math.min(this.remainSelf,2);
 						break;
 				}
+				this.isEndSur[3][0] = false;	//数字を見つけているので壁ではなくなる
 				break;
 			}else {
 				pos++;
@@ -175,30 +178,55 @@ class Num {
 		return this.hands4way;
 	}
 
+	public getRemainSelf():number{
+		return this.remainSelf;
+	}
+
+	public getRemain4way():number[]{
+		return this.remain4way;
+	}
+
 	public setRemain1way(dir:number,remain:number):void{	//remain < 2
-		this.remain4way[dir] = remain;
-		this.isChecked = false;
+		this.remain4way[dir] = Math.min(remain,this.remain4way[dir]);
+		this.isLogicChecked = false;
 		if(remain == 0){
 			this.isEndSur[dir][2] = false;
 			this.isEndSur[dir][1] = false;
-			this.isEndSur[dir][0] = this.hands4way[dir] == 0;
+			this.isEndSur[dir][0] = (this.hands4way[dir] == 0 || this.isEndSur[dir][0]);
 		}else{
 			this.isEndSur[dir][2] = false;
 		}
 	}
-
-	public setIsEndSurTrue(dir:number,remainNum:number,isEnd:boolean){
-		this.isEndSur[dir][remainNum] = isEnd;
-		this.isChecked = false;
+	/**
+	 * @returns 行き止まりセットができたか（自身の残り本数が、受け取った行き止まり手筋用残り本数より多い場合に成功する）
+	*/
+	public setIsEndSurTrue(dir:number,remainNum:number):boolean{
+		if(remainNum <= this.remainSelf){
+			this.isEndSur[dir][remainNum] = true;
+			this.isLogicChecked = false;
+			return true;
+		}else{
+			return false;
+		}
 	}
 
-	//数字マスに線を引き残り本数と行き止まり状況のタプルを返すメソッド
 	/**
-	 *
-	 * @param {number}hon the number of hand(s) drawn to this:1 or 2
-	 * @param {number}dir the number that indicates the direction the drown hand(s) be from :left=0,up=1,right=2,down=3
-	 * @param {boolean[4]}isoChange the dead end status of a direction from which the hands are drawn
-	 * @returns {number,boolean[2]} [the total remaining number of hands/ whether the number will be dead end or not if 1 or 2 hands are drawn to it]
+	 * 自身を島の末端として設定する
+	 */
+	public setEnd():void{
+		this.remain4way.forEach((val,dir) =>{
+			if(val == 0){
+				this.isLogicChecked = false;
+				this.isEndSur[dir][0] == true;
+			}
+		})
+	}
+
+	//数字マスに線を引き,残り本数を返す
+	/**
+	 *@param dir 方向
+	 *@param hon 引き本数
+	 *@returns 残り引き本数
 	 */
 	 public drawIn(dir:number,hon:number):number {
 		this.hands4way[dir] += hon;
@@ -209,11 +237,13 @@ class Num {
 	}
 
 	private drawSelf(hon:number[]):void{
-		for(let dir = 0; dir < 4; dir++){
-			this.hands4way[dir] += hon[dir];
-			this.remain4way[dir] -= hon[dir];
-			this.changeEndStatus(dir,hon[dir]);
-		}
+		hon.forEach((drawHon,dir) =>{
+			if(drawHon > 0){
+				this.hands4way[dir] += drawHon;
+				this.remain4way[dir] -= drawHon;
+				this.changeEndStatus(dir,drawHon);
+			}
+		})
 		this.remainSelf = this.remainSelf - hon.reduce((val,num) =>val + num);
 	}
 
@@ -228,23 +258,30 @@ class Num {
 			}else if(this.isEndSur[dir][1]){
 				this.isEndSur[dir][1] =false;
 				this.isEndSur[dir][0] =true;
+				//TODO ここで行き止まり通知を出せる
 			};
 		};
 	}
 
 	/**
-	 * @param	execFlg 手筋を実行するか
-	 * @return [線の引き先方向と本数,残り本数,手筋番号]
+	 * @param	execFlg 線引きを実行するか、調べるだけか
+	 * @return [[線の引き先方向ごと本数,手筋番号],残り本数]
 	 */
 	public checkLogics(execFlg : boolean):[[number[],string],number]{
-		if(this.isChecked){
+		if(this.isLogicChecked){
 			return [[[0,0,0,0],"000"],this.remainSelf];
 		}
 		let numberLogicResult:[number[],string]
-		let sumRemain4way = this.remain4way.reduce(function(prev,cur){return prev + cur});
+		let sumRemain4way = this.remain4way.reduce((prev,cur) =>prev + cur);
 		//this.minRemain4way = this.remain4way.reduce(function(prev,cur){return Math.min(prev,cur)});
-		let remain0count:number = this.remain4way.reduce((prev,cur) => {return prev + Number(cur == 0) })
-		let remain1count:number = this.remain4way.reduce((prev,cur) => {return prev + Number(cur == 1) })
+		let remain0count:number = 0;
+		for(let i:number = 0; i < 4 ;i++){
+			remain0count = remain0count + Number(this.remain4way[i] == 0);
+		}
+		let remain1count:number = 0;
+		for(let i:number = 0; i < 4 ;i++){
+			remain1count = remain1count + Number(this.remain4way[i] == 1);
+		}
 		let isEndSurCount:number[] =[0,0,0];
 		for(let arr of this.isEndSur){
 			isEndSurCount[0] += Number(arr[0]);
@@ -254,7 +291,11 @@ class Num {
 		if(sumRemain4way<this.remainSelf){	//周囲の残り本数が引く必要のある本数より少なければ破綻
 			return [[[0,0,0,0],"901"],0];
 		}else if(sumRemain4way == this.remainSelf){
-			numberLogicResult = [this.remain4way.concat(),""];	//全て腕を使い切るパターン
+			if(this.remainSelf == 0){
+				numberLogicResult = [[0,0,0,0],"000"];
+			}else{
+				numberLogicResult = [this.remain4way.concat(),"X01"];	//全て腕を使い切るパターン
+			}
 		}else{
 			switch (this.remainSelf) {
 				case 7:
@@ -278,6 +319,9 @@ class Num {
 				case 1:
 					numberLogicResult = this.logic1(remain0count,isEndSurCount);
 					break;
+				case 0:
+					numberLogicResult = [[0,0,0,0],"000"]
+					break;
 
 				default:
 					return [[[0,0,0,0],"999"],0];
@@ -285,8 +329,9 @@ class Num {
 		}
 		if(execFlg){
 			this.drawSelf(numberLogicResult[0]);
-			this.isChecked = true;
+			this.isLogicChecked = true;
 			return [numberLogicResult,this.remainSelf];
+			
 		}else{
 			return [numberLogicResult,this.remainSelf - numberLogicResult[0].reduce((prev,cur) => prev + cur)];
 		}
@@ -294,7 +339,7 @@ class Num {
 	//残り本数毎の手筋を別で保持
 	/**
 	 * @param
-	 * @return [線の引き先方向と本数,腕を使い切ったか]
+	 * @return [線の引き先方向ごとの本数,結果コード]
 	 */
 		private logic7():[number[],string]{
 			let logicResult :[number[],string];
@@ -326,14 +371,14 @@ class Num {
 		private logic5(remain0count:number,remain1count:number,isEndSurCount:number[]):[number[],string]{
 			let logicResult :[number[],string];
 			if(remain0count == 1){
-				logicResult = [this.isEndSur.map((val) => Number(!val[0])),"501"];	//壁5
+				logicResult = [this.remain4way.map((val) => Number(val != 0)),"501"];	//壁5
 			}else{
 				switch(remain1count){
 					case 2:	//残り本数は6以上かつ残り1が2方向なので周囲の残り本数は1122で確定
 						if(isEndSurCount[2] == 2){
 							switch(isEndSurCount[1]){
 								case 1:
-									logicResult = [this.isEndSur.map((val) => Number(!val[1] && !val[2])),"531"];
+									logicResult = [this.isEndSur.map((val) => Number(!val[1])),"531"];
 									break;
 								case 2:
 									logicResult = [[1,1,1,1],"532"];
@@ -347,9 +392,23 @@ class Num {
 						}
 						break;
 					case 1:
-						let tempResult = this.isEndSur.map((val, i) => Number(!val[1] && !val[2] && this.hands4way[i] == 0));
-						if(tempResult.findIndex((val) => val == 1) >= 0){
-							logicResult = [tempResult,"521"];
+						if(isEndSurCount[1] == 1){
+							switch(isEndSurCount[2]){
+								case 2:
+									let tempResult = this.isEndSur.map((val, i) => Number(!val[1] && !val[2] && this.hands4way[i] == 0));
+									if(tempResult.findIndex((val) => val == 1) >= 0){
+										logicResult = [tempResult,"521"];
+									}else{
+										logicResult =[[0,0,0,0],"000"];
+									}
+									break;
+								case 3:
+									logicResult =[this.isEndSur.map((val) => Number(val[2])),"522"];
+									break;
+								default:
+									logicResult =[[0,0,0,0],"000"];
+							}
+
 						}else{
 							logicResult =[[0,0,0,0],"000"];
 						}
@@ -422,51 +481,52 @@ class Num {
 		}
 		private logic3(remain0count:number,remain1count:number,isEndSurCount:number[]):[number[],string]{
 			let logicResult :[number[],string];
-			if(isEndSurCount[0] == 1){	
-				switch(isEndSurCount[1]){	//行き止まり1の数で分岐
-					case 2:
-						if(isEndSurCount[2] == 1){	//壁*1行き止まり1*2行き止まり2*1
-							logicResult = [this.isEndSur.map((val) => Number(!val[0])),"331"];	//壁以外全方向
-						}else{	//壁*1行き止まり1*2通常2*1　（壁1*1行き止まり1*2+通常1*1は使い切りなのでここでは起こらない
-							logicResult = [this.remain4way.map((val)=> Number(val == 2)),"311"];
-						}
-						break;
-					case 1:
-						switch(isEndSurCount[2]){
-							case 2:		//壁*1行き止まり1*1行き止まり2*2
-								logicResult = [this.isEndSur.map((val) => Number(val[2])),"322"];	//行き止まり2の方向
-								break;
-							case 1:		//壁*1行き止まり1*1行き止まり2*1
-								let tempResult = this.isEndSur.map((val,i)=>Number(!(val[0] || val[1] || val[2]) && (this.hands4way[i]==0)));
-								if(this.isEndSelf[0] && tempResult.findIndex((val) => val == 1) >= 0){
-									logicResult = [tempResult,"321"];	//通常2の方向
-								}else{
-									logicResult =[[0,0,0,0],"000"];
+			switch(remain0count){
+				case 2:
+					logicResult = [this.remain4way.map((val) => Number(val>0)),"301"];	//壁以外に一本ずつ
+					break;
+				case 1:
+					if(isEndSurCount[0] == 1){	
+						switch(isEndSurCount[1]){	//行き止まり1の数で分岐
+							case 2:
+								if(isEndSurCount[2] == 1){	//壁*1行き止まり1*2行き止まり2*1
+									logicResult = [this.isEndSur.map((val) => Number(!val[0])),"331"];	//壁以外全方向
+								}else{	//壁*1行き止まり1*2通常2*1　（壁1*1行き止まり1*2+通常1*1は使い切りなのでここでは起こらない
+									logicResult = [this.remain4way.map((val)=> Number(val == 2)),"311"];
 								}
 								break;
+							case 1:
+								switch(isEndSurCount[2]){
+									case 2:		//壁*1行き止まり1*1行き止まり2*2
+										logicResult = [this.isEndSur.map((val) => Number(val[2])),"322"];	//行き止まり2の方向
+										break;
+									case 1:		//壁*1行き止まり1*1行き止まり2*1
+										let tempResult = this.isEndSur.map((val,i)=>Number(!(val[0] || val[1] || val[2]) && (this.hands4way[i]==0)));
+										if(tempResult.findIndex((val) => val == 1) >= 0){
+											logicResult = [tempResult,"321"];	//通常2の方向
+										}else{
+											logicResult =[[0,0,0,0],"000"];
+										}
+										break;
+									default:
+										if(remain1count == 2){	//壁1+通常1*2 + 2*1 上の方と内容的にはダブっている
+											logicResult = [this.remain4way.map((val) => Number(val == 2)) ,"311"];
+										}else{
+											logicResult = [[0,0,0,0],"000"];
+										}
+										break;
+								}
 							default:
-								if(remain1count == 2){	//壁1+通常1*2 + 2*1 上の方と内容的にはダブっている
-									logicResult = [this.remain4way.map((val) => Number(val == 2)) ,"311"];
-								}else{
-									logicResult = [[0,0,0,0],"000"];
-								}
-								break;
+								logicResult = [[0,0,0,0],"000"];
 						}
-					default:
-						logicResult = [[0,0,0,0],"000"];
-				}
-			}else{
-				switch(remain0count){
-					case 2:
-						logicResult = [this.isEndSur.map((val) => Number(!val[0])),"301"];	//壁以外に一本ずつ
-						break;
-					case 1:
+					}else{
 						if(remain1count == 2){
 							logicResult = [this.remain4way.map((val) => Number(val == 2)) ,"311"];
 						}else{
 							logicResult = [[0,0,0,0],"000"];
 						}
-						break;
+					}
+					break;
 				default:
 					let tempResult = this.isEndSur.map((val,i) => Number(!val[1] && (this.hands4way[i]==0)));
 					if(isEndSurCount[1] == 3 && tempResult.findIndex((val) => val == 1) >= 0){
@@ -475,7 +535,6 @@ class Num {
 						logicResult = [[0,0,0,0],"000"];
 					}
 					break;
-				}
 			}
 			return	logicResult;
 		}
@@ -492,7 +551,11 @@ class Num {
 					break;
 				case 2:
 					if(remain1count == 1){
+						if(isEndSurCount[2] == 1){
+							logicResult =[this.isEndSur.map((val) => Number(!val[0])),"231"]
+						}else{
 							logicResult = [this.remain4way.map((val) => Number(val == 2)),"211"];
+						}
 					}else{
 							switch(isEndSurCount[2]) {
 								case 1:
@@ -506,6 +569,7 @@ class Num {
 									break;
 							}
 					}
+					break;
 				default:		//case 3 は破綻か全腕消費パターンなのでここでは起こらない
 					if(remain0count == 2 && remain1count == 1){
 						logicResult = [this.remain4way.map((val) => Number(val == 2)),"211"];
@@ -520,13 +584,18 @@ class Num {
 			let logicResult :[number[],string];
 			switch(remain0count){
 				case 3:
-					logicResult = [this.isEndSur.map((val) => Number(!val[0])),"101"];
+					logicResult = [this.remain4way.map((val) => Number(val > 0)),"101"];
 					break;
 				case 2:
 					if(isEndSurCount[0] == 2){
 						switch(isEndSurCount[1]){
 							case 1:
-								logicResult = [this.remain4way.map((val) => Number(val == 2)),"123"];
+								let tempResult = this.remain4way.map((val,i) => Number(val == 1 && !this.isEndSur[i][1]));
+								if(tempResult.findIndex((val) => val == 1) >= 0){
+									logicResult = [tempResult,"123"];
+								}else{
+									logicResult = [[0,0,0,0],"000"];
+								}
 								break;
 							case 2:
 								logicResult = [[0,0,0,0],"902"];
@@ -560,7 +629,7 @@ class Num {
 				default:
 					switch(isEndSurCount[1]){
 						case 3:
-						   logicResult = [this.remain4way.map((val)=> Number(val == 2)),"121"];
+						   logicResult = [this.isEndSur.map((val)=> Number(!val[1])),"121"];
 						   break;
 						case 4:
 							logicResult = [[0,0,0,0],"902"];

@@ -1,7 +1,11 @@
 
 //盤面の数字配置や島の情報を保持する
+import {Empty} from "./Empty";
+import {Island} from "./Island";
+import {Num} from "./Num";
 
- class HashiBoard {
+
+export class HashiBoard {
 
 	private height: number;
 	private width: number;
@@ -39,17 +43,19 @@
 			let id:number = 1		//id of numbers in board
 			let interval:number
 			for(let i = 0; i < coded.length; i++ ) {
-				charNum =  parseInt(coded.charAt(i),16);
+				charNum =  parseInt(coded.charAt(i),36);
 				interval = charNum - 15;
 				if (interval > 0) {
 					pos += interval;
 				}else {
-					this.boardAbst[pos%this.width][pos/this.width] = charNum;
-					this.numIdMap[pos%this.width][pos/this.width] = id;
+					this.boardAbst[Math.floor(pos/this.width)][pos%this.width] = charNum;
+					this.numIdMap[Math.floor(pos/this.width)][pos%this.width] = id;
+
 					id ++;
 					pos++;
 				}
 			}
+			id = 1;
 			this.boardNum = new Array(this.height);
 			this.boardEmpty = new Array(this.height);
 			for(let y:number = 0; y < this.height; y++){
@@ -58,18 +64,15 @@
 				for(let x = 0; x < this.width; x++){
 					if(this.boardAbst[y][x] > 0){
 						this.boardNum[y][x] = new Num(y,x,this.boardAbst,this.numIdMap,id);
-						this.boardEmpty[y][x] = new Empty(y,x,this.numIdMap)
 						this.numDict.set(id,this.boardNum[y][x]);
 						this.islands.set(id,new Island(id,this.boardNum[y][x]))
 						this.numsToCheckStack.push(id);
 						id += 1;
 					}else{
-						this.numIdMap[y][x] = -1;
+						this.boardEmpty[y][x] = new Empty(y,x,this.numIdMap)
 					}
 				}
 			}
-
-			console.log(this.boardAbst)
 		}else{
 			//if board size is given
 			this.height = param1;
@@ -117,24 +120,30 @@
 		let numId:number|undefined = this.numsToCheckStack.pop();
 		let fromNum:Num;
 		let logicResult:[[number[],string],number];
-		while(typeof numId === 'number'){
-			fromNum = this.numDict.get(numId) as Num
-			logicResult = (fromNum).checkLogics(true);
-			switch(logicResult[0][1].charAt(0)){
-				case "9":	//破綻またはエラー
-					return logicResult[0][1]
-				case "0":	//変化なし
-					break;
-				default:	//手筋実行あり
-					logicResult[0][0].forEach((hon,dir) => this.drawLine(fromNum,logicResult[1],hon,dir));
-					//残り本数が0の場合は島に伝える
-					if(logicResult[1] == 0){
-						(this.islands.get(fromNum.getParentIslandId()) as Island).inactivateNum(numId);
-					}
-					break;
+		let islandCheckResult:boolean;
+		do{
+			while(typeof numId === 'number'){
+				fromNum = this.numDict.get(numId) as Num
+				logicResult = fromNum.checkLogics(true);
+				switch(logicResult[0][1].charAt(0)){
+					case "9":	//破綻またはエラー
+						return logicResult[0][1]
+					case "0":	//変化なし
+						break;
+					default:	//手筋実行あり
+						logicResult[0][0].forEach((hon,dir) => this.drawLine(fromNum,logicResult[1],hon,dir));
+						//残り本数が0の場合は島に伝える
+						if(logicResult[1] == 0){
+							(this.islands.get(fromNum.getParentIslandId()) as Island).inactivateNum(numId);
+						}
+						break;
+				}
+				numId = this.numsToCheckStack.pop();
 			}
+			//島手筋が全てチェックし終わるまでループ
+			islandCheckResult = this.checkEndIslands()
 			numId = this.numsToCheckStack.pop();
-		}
+		}while(islandCheckResult)
 		return this.checkResult();
 	}
 
@@ -143,17 +152,19 @@
 			return "902"
 		}else{
 			let remainFlg:boolean = true;
-			this.islands.forEach((island) => remainFlg = island.getActiveNumList().size == 0);	//ここに到達する場合はforeach対象の島が一つしかない
+			this.islands.forEach((island) => 
+				remainFlg = island.getActiveNumList().size != 0);	//ここに到達する場合はforeach対象の島が一つしかない
 			if(remainFlg){
 				return "901"
 			}
 		}
-		return "001";
+		return "010";
 	}
 
 	private drawLine(fromNum:Num,fromRemain:number,hon:number,dir:number){
 		let nextTarget:Num|undefined;
 		let toNum:Num;
+
 		let toRemain:number;
 		if(hon > 0){	//線引き
 			toNum = this.numDict.get(fromNum.getSurNumId()[dir]) as Num;	//線引きなのでundefinedにはならない
@@ -164,10 +175,13 @@
 				case 0:
 					pos = -1;	//左
 					while(this.boardAbst[fromAddress[0]][fromAddress[1] + pos] == 0){
-						this.boardEmpty[fromAddress[0]][fromAddress[1] + pos].getHorNumId().forEach((id,i) =>{
+						this.boardEmpty[fromAddress[0]][fromAddress[1] + pos].getVerNumId().forEach((id,i) =>{
 							if(id > 0){
-								(this.numDict.get(id) as Num).setRemain1way(3 - 2 * i,0);	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
-								this.numsToCheckStack.push(id);
+								nextTarget = this.numDict.get(id) as Num;
+								if(nextTarget.getRemainSelf() >0){
+									nextTarget.setRemain1way(3 - 2 * i,0);	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
+									this.numsToCheckStack.push(id);
+								}
 							}
 						});
 						pos--;
@@ -176,10 +190,13 @@
 				case 1:
 					pos = -1;	//上
 					while(this.boardAbst[fromAddress[0] + pos][fromAddress[1]] == 0){
-						this.boardEmpty[fromAddress[0] + pos][fromAddress[1]].getVerNumId().forEach((id,i) =>{
+						this.boardEmpty[fromAddress[0] + pos][fromAddress[1]].getHorNumId().forEach((id,i) =>{
 							if(id > 0){
-								(this.numDict.get(id) as Num).setRemain1way(2 - 2 * i,0);	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
-								this.numsToCheckStack.push(id);
+								nextTarget = this.numDict.get(id) as Num;
+								if(nextTarget.getRemainSelf() >0){
+									nextTarget.setRemain1way(2 - 2 * i,0);	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
+									this.numsToCheckStack.push(id);
+								}
 							}
 						});
 						pos--;
@@ -188,10 +205,13 @@
 				case 2:
 					pos = 1;		//右
 					while(this.boardAbst[fromAddress[0]][fromAddress[1] + pos] == 0){
-						this.boardEmpty[fromAddress[0]][fromAddress[1] + pos].getHorNumId().forEach((id,i) =>{
+						this.boardEmpty[fromAddress[0]][fromAddress[1] + pos].getVerNumId().forEach((id,i) =>{
 							if(id > 0){
-								(this.numDict.get(id) as Num).setRemain1way(3 - 2 * i,0);	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
-								this.numsToCheckStack.push(id);
+								nextTarget = this.numDict.get(id) as Num;
+								if(nextTarget.getRemainSelf() >0){
+									nextTarget.setRemain1way(3 - 2 * i,0);	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
+									this.numsToCheckStack.push(id);
+								}
 							}
 						});
 						pos++;
@@ -200,10 +220,13 @@
 				case 3:
 					pos = 1;	//下
 					while(this.boardAbst[fromAddress[0] + pos][fromAddress[1]] == 0){
-						this.boardEmpty[fromAddress[0] + pos][fromAddress[1]].getVerNumId().forEach((id,i) =>{
+						this.boardEmpty[fromAddress[0] + pos][fromAddress[1]].getHorNumId().forEach((id,i) =>{
 							if(id > 0){
-								(this.numDict.get(id) as Num).setRemain1way(2 - 2 * i,0);	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
-								this.numsToCheckStack.push(id);
+								nextTarget = this.numDict.get(id) as Num;
+								if(nextTarget.getRemainSelf() >0){
+									nextTarget.setRemain1way(2 - 2 * i,0);	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
+									this.numsToCheckStack.push(id);
+								}
 							}
 						});
 						pos++;
@@ -213,33 +236,73 @@
 			//数字引き
 			toRemain = toNum.drawIn((dir+2)%4,hon);
 			if(toRemain < 2){
-				toNum.getSurNumId().forEach((id) => {
-					nextTarget = this.numDict.get(id);
-					if(nextTarget != undefined){
-						nextTarget.setRemain1way((dir+2)%4,toRemain);
-						this.numsToCheckStack.push(id);
+				toNum.getSurNumId().forEach((id,nextDir) => {
+					if(id > 0 && id != fromNum.getId()){
+						nextTarget = this.numDict.get(id) as Num;
+						if(nextTarget.getRemainSelf() > 0){
+							nextTarget.setRemain1way((nextDir+2)%4,toRemain);
+							this.numsToCheckStack.push(id);
+						}
 					}
 				});
+				//引き先が0になった場合非活性化する
+				if(toRemain == 0){
+					(this.islands.get(toNum.getParentIslandId()) as Island).inactivateNum(toNum.getId());
+				}
 			}
 
 			//島のマージ
 			let fromParentId = fromNum.getParentIslandId();
 			let toParentId = toNum.getParentIslandId();
+			//引き元と引き先の島Idが異なる場合は島をマージする
 			if(fromParentId != toParentId){
 				this.mergeIslands(fromParentId,toParentId)
 			};
 		}else if(fromRemain < 2){	//残り引き本数減:0本方向に通知して手筋チェック対象に加える
 			nextTarget = this.numDict.get(fromNum.getSurNumId()[dir]);
 			if(nextTarget != undefined){
-				nextTarget.setRemain1way((dir+2)%4,fromRemain);
-				this.numsToCheckStack.push(nextTarget.getId());
+				if(nextTarget.getRemainSelf() > 0){
+					nextTarget.setRemain1way((dir+2)%4,fromRemain);
+					this.numsToCheckStack.push(nextTarget.getId());
+				}
 			}
 		}
 	}
 
 	private mergeIslands(fromId:number,toId:number):void{
-		(this.islands.get(toId) as Island).mergeIsland(this.islands.get(fromId) as Island);
-		this.islands.delete(fromId);
+		(this.islands.get(fromId) as Island).mergeIsland(this.islands.get(toId) as Island);
+		this.islands.delete(toId);
+	}
+
+	private checkEndIslands():boolean{
+		let resultFlg:boolean =false;
+		this.islands.forEach((isl) => {
+			//島ごとに出口が一つだけになっているか調べる
+			if(isl.getActiveNumList().size == 1 &&  isl.getNumList().size > 1 && !isl.getIsIslandEndChecked()){
+				//出口が一つの島で、出口の残り数字が2以下なら行き止まりを設定できる可能性がある。
+				isl.setIsIslandEndChecked(true);
+				isl.getActiveNumList().forEach((num) => {
+					let remainSelf:number = num.getRemainSelf();
+					if(remainSelf < 3){
+						num.setEnd();
+						this.numsToCheckStack.push(num.getId());
+						resultFlg = true;
+						num.getSurNumId().forEach((surNumId,dir) => {
+							//数字IDが0より大きい（存在する）場合に行き止まりを設定できるかチェックする
+							let tempResult:boolean;
+							if(surNumId > 0){
+								tempResult =(this.numDict.get(surNumId) as Num).setIsEndSurTrue((dir+2)%4,remainSelf);
+								if(tempResult){
+									this.numsToCheckStack.push(surNumId);
+								}
+							}
+						})
+					}
+				})
+				
+			}
+		})
+		return resultFlg;
 	}
 	
 }

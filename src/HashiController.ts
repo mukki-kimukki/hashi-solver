@@ -1,12 +1,17 @@
-class HashiController{
+import { HashiBoard } from "./HashiBoard";
+import { ResultPatterns } from "./hashiConstants";
+export class HashiController{
     private hashiBoard:HashiBoard;
     constructor(url:string){
         this.hashiBoard = new HashiBoard(url);
     }
 
     public solve(depth:number):void{
-        
+        console.log("start");
+        const startTime = new Date().getTime();
         let result = this.hashiBoard.solve(depth);
+        const endTime = new Date().getTime();
+        console.log("finished: " + (endTime -startTime) + " ms");
         this.output();
         console.log(ResultPatterns.resultDict.get(result));
             
