@@ -125,6 +125,8 @@ export class HashiBoard {
 			while(typeof numId === 'number'){
 				fromNum = this.numDict.get(numId) as Num
 				logicResult = fromNum.checkLogics(true);
+				//console.log(fromNum.getAddress());
+				//console.log(logicResult[0]);
 				switch(logicResult[0][1].charAt(0)){
 					case "9":	//破綻またはエラー
 						return logicResult[0][1]
@@ -149,13 +151,10 @@ export class HashiBoard {
 
 	private checkResult():string{
 		if(this.islands.size != 1){
-			return "902"
+			return "092"
 		}else{
-			let remainFlg:boolean = true;
-			this.islands.forEach((island) => 
-				remainFlg = island.getActiveNumList().size != 0);	//ここに到達する場合はforeach対象の島が一つしかない
-			if(remainFlg){
-				return "901"
+			if(Array.from(this.islands.values())[0].getActiveNumList().size != 0){
+				return "091"
 			}
 		}
 		return "010";
@@ -179,8 +178,9 @@ export class HashiBoard {
 							if(id > 0){
 								nextTarget = this.numDict.get(id) as Num;
 								if(nextTarget.getRemainSelf() >0){
-									nextTarget.setRemain1way(3 - 2 * i,0);	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
-									this.numsToCheckStack.push(id);
+									if(nextTarget.setRemain1way(3 - 2 * i,0)){ 	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
+										this.numsToCheckStack.push(id);
+									};
 								}
 							}
 						});
@@ -194,8 +194,9 @@ export class HashiBoard {
 							if(id > 0){
 								nextTarget = this.numDict.get(id) as Num;
 								if(nextTarget.getRemainSelf() >0){
-									nextTarget.setRemain1way(2 - 2 * i,0);	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
-									this.numsToCheckStack.push(id);
+									if(nextTarget.setRemain1way(2 - 2 * i,0)){	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
+										this.numsToCheckStack.push(id);
+									};
 								}
 							}
 						});
@@ -209,8 +210,9 @@ export class HashiBoard {
 							if(id > 0){
 								nextTarget = this.numDict.get(id) as Num;
 								if(nextTarget.getRemainSelf() >0){
-									nextTarget.setRemain1way(3 - 2 * i,0);	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
-									this.numsToCheckStack.push(id);
+									if(nextTarget.setRemain1way(3 - 2 * i,0)){	//id>0で存在判定可能 上→下の順にidがくるので、0にするのは下→上の順
+										this.numsToCheckStack.push(id);
+									};
 								}
 							}
 						});
@@ -224,8 +226,9 @@ export class HashiBoard {
 							if(id > 0){
 								nextTarget = this.numDict.get(id) as Num;
 								if(nextTarget.getRemainSelf() >0){
-									nextTarget.setRemain1way(2 - 2 * i,0);	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
-									this.numsToCheckStack.push(id);
+									if(nextTarget.setRemain1way(2 - 2 * i,0)){	//id>0で存在判定可能 左→右の順にidがくるので、0にするのは右→左の順
+										this.numsToCheckStack.push(id);
+									};
 								}
 							}
 						});
@@ -235,13 +238,19 @@ export class HashiBoard {
 			}
 			//数字引き
 			toRemain = toNum.drawIn((dir+2)%4,hon);
+			if(fromRemain == 0){
+				if(toNum.setRemain1way((dir+2)%4,0)){
+					this.numsToCheckStack.push(toNum.getId());
+				};
+			}
 			if(toRemain < 2){
 				toNum.getSurNumId().forEach((id,nextDir) => {
-					if(id > 0 && id != fromNum.getId()){
+					if(id > 0){
 						nextTarget = this.numDict.get(id) as Num;
 						if(nextTarget.getRemainSelf() > 0){
-							nextTarget.setRemain1way((nextDir+2)%4,toRemain);
-							this.numsToCheckStack.push(id);
+							if(nextTarget.setRemain1way((nextDir+2)%4,toRemain)){
+								this.numsToCheckStack.push(id);
+							};
 						}
 					}
 				});
@@ -262,8 +271,9 @@ export class HashiBoard {
 			nextTarget = this.numDict.get(fromNum.getSurNumId()[dir]);
 			if(nextTarget != undefined){
 				if(nextTarget.getRemainSelf() > 0){
-					nextTarget.setRemain1way((dir+2)%4,fromRemain);
-					this.numsToCheckStack.push(nextTarget.getId());
+					if(nextTarget.setRemain1way((dir+2)%4,fromRemain)){
+						this.numsToCheckStack.push(nextTarget.getId());
+					};
 				}
 			}
 		}
@@ -278,29 +288,46 @@ export class HashiBoard {
 		let resultFlg:boolean =false;
 		this.islands.forEach((isl) => {
 			//島ごとに出口が一つだけになっているか調べる
-			if(isl.getActiveNumList().size == 1 &&  isl.getNumList().size > 1 && !isl.getIsIslandEndChecked()){
-				//出口が一つの島で、出口の残り数字が2以下なら行き止まりを設定できる可能性がある。
-				isl.setIsIslandEndChecked(true);
-				isl.getActiveNumList().forEach((num) => {
-					let remainSelf:number = num.getRemainSelf();
-					if(remainSelf < 3){
-						num.setEnd();
-						this.numsToCheckStack.push(num.getId());
-						resultFlg = true;
-						num.getSurNumId().forEach((surNumId,dir) => {
-							//数字IDが0より大きい（存在する）場合に行き止まりを設定できるかチェックする
-							let tempResult:boolean;
-							if(surNumId > 0){
-								tempResult =(this.numDict.get(surNumId) as Num).setIsEndSurTrue((dir+2)%4,remainSelf);
-								if(tempResult){
-									this.numsToCheckStack.push(surNumId);
+			switch(isl.getActiveNumList().size){
+				case 1:
+					if(isl.getNumList().size > 1 && !isl.getIsIslandEndChecked()){
+						//出口が一つの島なら行き止まりを設定できる可能性がある。
+						isl.setIsIslandEndChecked(true);
+						isl.getActiveNumList().forEach((num) => {
+							let remainSelf:number = num.getRemainSelf();
+							num.setEnd();
+							this.numsToCheckStack.push(num.getId());
+							resultFlg = true;
+							num.getSurNumId().forEach((surNumId,dir) => {
+								//数字IDが0より大きく（存在する）出口数字が2以下の場合に行き止まりを設定できるかチェックする
+								let tempResult:boolean;
+								if(surNumId > 0 && remainSelf <= 2){
+									tempResult =(this.numDict.get(surNumId) as Num).setIsEndSurTrue((dir+2)%4,remainSelf);
+									if(tempResult){
+										this.numsToCheckStack.push(surNumId);
+									}
 								}
-							}
+							})
 						})
+						
 					}
-				})
-				
+					break;
+				case 2:
+					//出口の数字が二つでその数字が隣接している場合、残り本数が同じで2本以下なら確定が発生する。
+					let nums = Array.from(isl.getActiveNumList().values());
+					let remainSelf0 = nums[0].getRemainSelf();
+					if(remainSelf0 <= 2 && remainSelf0 == nums[1].getRemainSelf()){
+						nums[0].getSurNumId().forEach((id,dir) =>{
+							if(id == nums[1].getId() && nums[0].getRemain4way()[dir] == nums[0].getRemain4way()[(dir+2)%4]){
+								nums[0].setRemain1way(dir,0);
+								this.numsToCheckStack.push(nums[0].getId());
+								resultFlg = true;
+							}
+						});
+					}
+					break;
 			}
+
 		})
 		return resultFlg;
 	}

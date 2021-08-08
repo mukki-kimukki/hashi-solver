@@ -6,6 +6,13 @@ export class HashiController{
         this.hashiBoard = new HashiBoard(url);
     }
 
+    public duplicate():void{
+        const startTime = new Date().getTime();
+        //this.hashiBoard =JSON.parse(JSON.stringify(this.hashiBoard)) as HashiBoard;
+        const endTime = new Date().getTime();
+        console.log("duplicated: " + (endTime -startTime) + " ms");
+    }
+
     public solve(depth:number):void{
         console.log("start");
         const startTime = new Date().getTime();
