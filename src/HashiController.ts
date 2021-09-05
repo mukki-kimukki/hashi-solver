@@ -19,13 +19,13 @@ export class HashiController{
         let result = this.hashiBoard.solve(depth);
         const endTime = new Date().getTime();
         console.log("finished: " + (endTime -startTime) + " ms");
-        this.output();
-        console.log(ResultPatterns.resultDict.get(result));
+        this.output(result[1]);
+        console.log(ResultPatterns.resultDict.get(result[0]));
             
     }
 
-    private output():void{
-        let result = this.hashiBoard.getBoardNum();
+    private output(depth:number):void{
+        let result = this.hashiBoard.getBoardNum(depth);
         let boardAbst = this.hashiBoard.getBoardAbst();
         let describe:string[][] = boardAbst.map((row) => row.map((val) => {
                 if(val == 0){

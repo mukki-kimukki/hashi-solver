@@ -1,8 +1,5 @@
 export class Empty{
-    private leftNumId:number = -1;
-    private upNumId:number = -1;
-    private rightNumId:number = -1;
-    private downNumId:number = -1;
+	private id4way:number[] = [-1,-1,-1,-1];
 
     constructor(y:number,x:number,numIdMap:number[][]){
 		let pos:number = -1;						//縦または横方向の(x,y)からの相対位置:左から調べるので初期値は-1
@@ -10,7 +7,7 @@ export class Empty{
 		while(x + pos >= 0) {
 			//左に数字を見つけた場合
 			if(numIdMap[y][x + pos] > 0) {
-                this.leftNumId = numIdMap[y][x+pos];
+                this.id4way[0] = numIdMap[y][x+pos];
 				break;
 			}else {
 				pos--;
@@ -23,7 +20,7 @@ export class Empty{
 		while(x + pos < numIdMap[0].length){
 			//右に数字を見つけた場合
 			if(numIdMap[y][x + pos] > 0) {
-                this.rightNumId = numIdMap[y][x+pos];
+                this.id4way[2] = numIdMap[y][x+pos];
 				break;
 			}else {
 				pos++;
@@ -35,7 +32,7 @@ export class Empty{
 		while(y + pos >= 0) {
 			//上に数字を見つけた場合
 			if(numIdMap[y + pos][x] > 0) {
-                this.upNumId=numIdMap[y+pos][x];
+                this.id4way[1]=numIdMap[y+pos][x];
 				break;
 			}else {
 				pos--;
@@ -48,7 +45,7 @@ export class Empty{
 		while(y + pos < numIdMap.length) {
 			//下に数字を見つけた場合
 			if(numIdMap[y + pos][x] > 0) {
-                this.downNumId=numIdMap[y+pos][x];
+                this.id4way[3]=numIdMap[y+pos][x];
 				break;
 			}else {
 				pos++;
@@ -59,12 +56,17 @@ export class Empty{
 	@returns [leftId,rightId]
 	*/
     public getHorNumId():[number,number]{
-        return [this.leftNumId,this.rightNumId];
+        return [this.id4way[0],this.id4way[2]];
     }
 	/**
 	@returns [upId,downId]
 	*/
     public getVerNumId():[number,number]{
-        return [this.upNumId,this.downNumId];
+        return [this.id4way[1],this.id4way[3]];
     }
+
+
+	public get surNumId():number[]{
+		return this.id4way;
+	}
 }
