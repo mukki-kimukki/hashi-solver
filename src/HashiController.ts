@@ -13,14 +13,14 @@ export class HashiController{
         console.log("duplicated: " + (endTime -startTime) + " ms");
     }
 
-    public solve(depth:number):void{
+    public solve(maxdepth:number):void{
         console.log("start");
         const startTime = new Date().getTime();
-        let result = this.hashiBoard.solve(depth);
+        let result = this.hashiBoard.solve(maxdepth);
         const endTime = new Date().getTime();
         console.log("finished: " + (endTime -startTime) + " ms");
-        this.output(result[1]);
-        console.log(ResultPatterns.resultDict.get(result[0]));
+        this.output(0);
+        console.log(ResultPatterns.resultDict.get(result));
             
     }
 
