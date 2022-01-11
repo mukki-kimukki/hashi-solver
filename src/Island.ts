@@ -60,4 +60,8 @@ export class Island{
         this.numList.splice(depth);
         this.activeNumList.splice(depth);
     }
+
+    public get id():number{
+        return this.islandId;
+    }
 }
