@@ -61,7 +61,7 @@ export class Island{
         this.activeNumList.splice(depth);
     }
 
-    public get id():number{
+    public getId():number{
         return this.islandId;
     }
 }

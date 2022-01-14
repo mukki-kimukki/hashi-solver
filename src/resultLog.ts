@@ -1,32 +1,32 @@
 export class resultLog{
-    private _numIdCheck:number;
-    private _numIdDraw:number;
-    private _result:number[]
-    private _resultCode:string;
+    private numIdCheck:number;
+    private numIdDraw:number;
+    private result:number[]
+    private resultCode:string;
 
     constructor(numIdCheck:number,numIdDraw:number,result:number[],resultCode:string){
-        this._numIdCheck = numIdCheck;
-        this._numIdDraw =numIdDraw;
-        this._result = result;
-        this._resultCode = resultCode;
+        this.numIdCheck = numIdCheck;
+        this.numIdDraw =numIdDraw;
+        this.result = result;
+        this.resultCode = resultCode;
     }
 
-    public get numIdCheck(){
-        return this._numIdCheck;
-    }
-
-    
-    public get numIdDraw(){
-        return this._numIdDraw;
+    public getNumIdCheck(){
+        return this.numIdCheck;
     }
 
     
-    public get result(){
-        return this._result;
+    public getNumIdDraw(){
+        return this.numIdDraw;
     }
 
     
-    public get resultCode(){
-        return this._resultCode;
+    public getResult(){
+        return this.result;
+    }
+
+    
+    public getResultCode(){
+        return this.resultCode;
     }
 }

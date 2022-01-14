@@ -66,7 +66,7 @@ export class Empty{
     }
 
 
-	public get surNumId():number[]{
+	public getSurNumId():number[]{
 		return this.id4way;
 	}
 }

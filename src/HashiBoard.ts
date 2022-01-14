@@ -379,7 +379,7 @@ export class HashiBoard {
 		for(let island of this.islands.values()){
 			islandsCount += Number(island.getNumList(depth).length > 0);
 			activeIslandsCount += Number(island.getActiveNumList(depth).length > 0);
-			activeIslandId = island.id;
+			activeIslandId = island.getId();
 		}
 		if(activeIslandsCount > 0){
 			return "091"
@@ -669,7 +669,7 @@ export class HashiBoard {
 		let fromAddress = this.numDict[depth][id].getAddress();
 		//checkMinHonsuの段階で両方向引けることを確かめているので条件にundefinedは発生しない
 		while(this.boardAbst[fromAddress[0] + y][fromAddress[1] + x] == 0){
-			targetDict.push(this.boardEmpty[fromAddress[0] + y][fromAddress[1] + x].surNumId[(area + 1) % 4]);
+			targetDict.push(this.boardEmpty[fromAddress[0] + y][fromAddress[1] + x].getSurNumId()[(area + 1) % 4]);
 			x += xinc;
 			y += yinc;
 		}
@@ -696,7 +696,7 @@ export class HashiBoard {
 		y = yinc;
 		
 		while(this.boardAbst[fromAddress[0] + y][fromAddress[1] + x] == 0){
-			let nextId = this.boardEmpty[fromAddress[0] + y][fromAddress[1] + x].surNumId[area];
+			let nextId = this.boardEmpty[fromAddress[0] + y][fromAddress[1] + x].getSurNumId()[area];
 			if(targetDict.includes(nextId)){
 				switch(this.numDict[depth][nextId].getMin1((area + 2) % 4)){
 					case 3:
