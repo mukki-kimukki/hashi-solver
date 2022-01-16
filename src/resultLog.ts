@@ -1,12 +1,12 @@
 export class resultLog{
     private numIdCheck:number;
-    private numIdDraw:number;
+    private numIdTarget:number;
     private result:number[]
     private resultCode:string;
 
-    constructor(numIdCheck:number,numIdDraw:number,result:number[],resultCode:string){
+    constructor(numIdCheck:number,numIdTarget:number,result:number[],resultCode:string){
         this.numIdCheck = numIdCheck;
-        this.numIdDraw =numIdDraw;
+        this.numIdTarget =numIdTarget;
         this.result = result;
         this.resultCode = resultCode;
     }
@@ -16,8 +16,8 @@ export class resultLog{
     }
 
     
-    public getNumIdDraw(){
-        return this.numIdDraw;
+    public getNumIdTarget(){
+        return this.numIdTarget;
     }
 
     

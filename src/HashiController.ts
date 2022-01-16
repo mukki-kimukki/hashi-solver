@@ -19,8 +19,9 @@ export class HashiController{
         let result = this.hashiBoard.solve(maxdepth);
         const endTime = new Date().getTime();
         console.log("finished: " + (endTime -startTime) + " ms");
-        this.output(0);
+        console.log(result);
         console.log(ResultPatterns.resultDict.get(result));
+        this.output(0);
             
     }
 
