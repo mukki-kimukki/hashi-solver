@@ -156,7 +156,7 @@ export class Num {
 					pos++;
 				}
 			}
-
+			//console.log("numId =" + this.id + " remain= " + this.remain4way);
 		}else{
 			let original = y as Num;
 			this.id = original.getId();
@@ -168,7 +168,7 @@ export class Num {
 			this.parentIslandId = original.getParentIslandId();
 			this.isLogicChecked = original.getIsLogicChecked();
 			let origIsEndSur = original.getIsEndSur();
-			this.isEndSur = [origIsEndSur[0].concat(),origIsEndSur[1].concat(),origIsEndSur[2].concat()];
+			this.isEndSur = [origIsEndSur[0].concat(),origIsEndSur[1].concat(),origIsEndSur[2].concat(),origIsEndSur[3].concat()];
 			this.hands4way = original.getHands4way().concat();
 		}
 	}
@@ -291,14 +291,14 @@ export class Num {
 	}
 
 	private drawSelf(result:number[]):void{
+		this.remainSelf -= result.reduce((prev,cur) => prev + cur)
 		result.forEach((hon,dir) =>{
 			if(hon > 0){
 				this.hands4way[dir] += hon;
-				this.remain4way[dir] -= hon;
+				this.remain4way[dir] = Math.min(this.remainSelf, this.remain4way[dir] - hon);
 				this.changeEndStatus(dir,hon);
-				this.remainSelf -= hon;
 			}
-		})
+		});
 	}
 
 	private changeEndStatus(dir:number,hon:number):void{
@@ -371,6 +371,10 @@ export class Num {
 			isEndSurCount[1] += Number(arr[1]);
 			isEndSurCount[2] += Number(arr[2]);
 		}
+		//if(this.id == 1){
+			// console.log("id = 1 sumRemain4way" + sumRemain4way + " remainSelf " + this.remainSelf);
+			// console.log(this.remain4way);
+		//}
 		if(sumRemain4way<this.remainSelf){	//周囲の残り本数が引く必要のある本数より少なければ破綻
 			return [[[0,0,0,0],"901"],0];
 		}else if(sumRemain4way == this.remainSelf){
@@ -413,6 +417,7 @@ export class Num {
 		if(numberLogicResult[1].charAt(0) == "0"){
 			return [numberLogicResult,this.remainSelf];
 		}else{
+			// console.log("id= " + this.id + " remainSelf= " + this.remainSelf + " remain4way = " + this.remain4way);
 			if(execFlg){
 				this.drawSelf(numberLogicResult[0]);
 				this.isLogicChecked = true;
@@ -520,7 +525,7 @@ export class Num {
 		let logicResult :[number[],string];
 		if(remain0count == 1){
 			if(remain1count == 1){
-				if(isEndSurCount[2] == 2 && isEndSurCount[0] == 1 && this.remain4way.findIndex((val,i) => val == 1 && this.hands4way[i] == 0)){
+				if(isEndSurCount[2] == 2 && isEndSurCount[0] == 1 && this.hands4way.findIndex((hon,i) => hon > 0 && !this.isEndSur[i][0])<0){
 					logicResult = [this.remain4way.map((val) =>Number(val != 0) ),"1431"];
 				}else{
 					logicResult = [this.remain4way.map((val) => Number(val==2)),"1411"];
@@ -585,8 +590,8 @@ export class Num {
 				if(isEndSurCount[0] == 1){	
 					switch(isEndSurCount[1]){	//行き止まり1の数で分岐
 						case 2:
-							if(isEndSurCount[2] == 1){	//壁*1行き止まり1*2行き止まり2*1
-								logicResult = [this.isEndSur.map((val) => Number(!val[0])),"1331"];	//壁以外全方向
+							if(isEndSurCount[2]){	//壁*1行き止まり1*2行き止まり2*1
+								logicResult = [this.isEndSur.map((val,i) => Number(!val[0] && this.hands4way[i]==0)),"1331"];	//壁以外で腕が伸びていない方向
 							}else{	//壁*1行き止まり1*2通常2*1　（壁1*1行き止まり1*2+通常1*1は使い切りなのでここでは起こらない
 								logicResult = [this.remain4way.map((val)=> Number(val == 2)),"1311"];
 							}
@@ -597,7 +602,7 @@ export class Num {
 									logicResult = [this.isEndSur.map((val) => Number(val[2])),"1322"];	//行き止まり2の方向
 									break;
 								case 1:		//壁*1行き止まり1*1行き止まり2*1
-									let tempResult = this.isEndSur.map((val,i)=>Number(!(val[0] || val[1] || val[2]) && (this.hands4way[i]==0)));
+									let tempResult = this.remain4way.map((val,i)=>Number(val==2 && !this.isEndSur[i][2]));
 									if(tempResult.findIndex((val) => val == 1) >= 0){
 										logicResult = [tempResult,"1321"];	//通常2の方向
 									}else{
@@ -641,7 +646,7 @@ export class Num {
 			case 1:
 				let tempResult = this.isEndSur.map((val,i) =>Number(!(val[0] || val[1]) && (this.hands4way[i]==0)));
 				if(isEndSurCount[1] == 2 && tempResult.findIndex((val) => val == 1) >= 0){
-					logicResult = [tempResult,"121"];
+					logicResult = [tempResult,"1221"];
 				}else{
 					if(remain0count == 2 && remain1count == 1){
 						logicResult = [this.remain4way.map((val) => Number(val ==2)),"1211"];
@@ -699,10 +704,20 @@ export class Num {
 							}
 							break;
 						case 2:
-							logicResult = [[0,0,0,0],"902"];
+							switch(this.hands4way.reduce((prev,cur) => prev + Number(cur > 0))){
+								case 0:
+									logicResult = [[0,0,0,0],"902"]
+									break;
+								case 1:
+									logicResult = [this.hands4way.map((hon,i) => Number(hon == 0 && this.isEndSur[i][1])),"1124"]
+									break;
+								default:	//case 2
+									logicResult = [[0,0,0,0],"00012"];
+									break;
+							}
 							break;
 						default:
-							logicResult = [[0,0,0,0],"00012"];
+							logicResult = [[0,0,0,0],"00013"];
 							break;
 					}
 				}else{
@@ -713,18 +728,26 @@ export class Num {
 				if(isEndSurCount[0] == 1){
 					switch(isEndSurCount[1]){
 						case 3:
-							logicResult = [[0,0,0,0],"902"];
+							if(this.hands4way.findIndex((val,i) =>val > 0 && this.isEndSur[i][1] == true) > 0){
+								logicResult = [[0,0,0,0],"00014"];
+							}else{
+								logicResult = [[0,0,0,0],"902"];
+							}
 							break;
 						case 2:
-							logicResult = [this.isEndSur.map((val) => Number(!val[0] && !val[1])),"1122"];
+							if(this.hands4way.findIndex((val,i) =>val > 0 && this.isEndSur[i][1] == true) > 0){
+								logicResult = [[0,0,0,0],"00015"];
+							}else{
+								logicResult = [this.isEndSur.map((val) => Number(val[0] == false && val[1] == false)),"1121"];
+							}
 							break;
 						default:
-							logicResult = [[0,0,0,0],"00014"];
+							logicResult = [[0,0,0,0],"00016"];
 							break;
 
 					}
 				}else{
-					logicResult = [[0,0,0,0],"00015"];
+					logicResult = [[0,0,0,0],"00017"];
 				}
 				break;
 			default:
@@ -733,10 +756,14 @@ export class Num {
 						logicResult = [this.isEndSur.map((val)=> Number(!val[1])),"1121"];
 						break;
 					case 4:
-						logicResult = [[0,0,0,0],"902"];
+						if(this.hands4way.findIndex((val,i) =>val > 0 && this.isEndSur[i][1] == true) > 0){
+							logicResult = [[0,0,0,0],"00018"];
+						}else{
+							logicResult = [[0,0,0,0],"902"];
+						}
 						break;
 					default:
-						logicResult = [[0,0,0,0],"00016"];
+						logicResult = [[0,0,0,0],"00019"];
 						break;
 				}
 				break;
@@ -779,5 +806,18 @@ export class Num {
 
 			}
 		}
+	}
+
+	/**
+	 * 最低一方向のエリアを渡し、最低引き本数を返す。
+	 * @param min1area 最低一本の方向
+	 * @returns 本数配列
+	 */
+	public getExecMin1result(area:number):number[]{
+		let areaRemain:number = this.remainSelf - Math.max(this.remain4way[area],this.remain4way[(area+1)%4]);
+		let result:number[] = [0,0,0,0];
+		result[(area+2)%4] = areaRemain - this.remain4way[(area+3)%4];
+		result[(area+3)%4] = areaRemain - this.remain4way[(area+2)%4];
+		return result;
 	}
 }

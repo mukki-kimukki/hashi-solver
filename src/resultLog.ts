@@ -1,9 +1,9 @@
-export class resultLog{
+export class ResultLog{
     private numIdCheck:number;
     private numIdTarget:number;
     private result:number[]
     private resultCode:string;
-
+    public static defaultResultArr:number[][][] = [[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],[[-1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,-1]]];
     constructor(numIdCheck:number,numIdTarget:number,result:number[],resultCode:string){
         this.numIdCheck = numIdCheck;
         this.numIdTarget =numIdTarget;
@@ -28,5 +28,9 @@ export class resultLog{
     
     public getResultCode(){
         return this.resultCode;
+    }
+
+    public consoleLog(){
+        console.log("id= " + this.numIdTarget +" 4way= [" + this.result +"] resultCode= " +this.resultCode);
     }
 }

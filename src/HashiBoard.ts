@@ -3,7 +3,7 @@
 import {Empty} from "./Empty";
 import {Island} from "./Island";
 import {Num} from "./Num";
-import {resultLog} from"./resultLog";
+import {ResultLog} from"./ResultLog";
 
 
 export class HashiBoard {
@@ -16,11 +16,10 @@ export class HashiBoard {
 	private numDict:Num[][];	//仮置き段階ごとに数字idと数字詳細を対応させる辞書
 	private islands:Map<number,Island> = new Map<number,Island>();	//島と島に含まれる数字を対応させる辞書
 	private numsToCheckStack: number[] = new Array();	//手筋チェック対象idのスタック
-	private numsForTrialStack: number[][] = new Array();	//仮定チェック対象idのスタック
-	private currentId:number = 0;	//手筋チェックをする際にスタート地点を分散させるため、最後のチェック箇所を記録する。
+	private currentId:number = 0;	//スタート地点を分散させるため、最後のチェック箇所を記録する。
 	private numCount:number;	//数字の数
-	private resultLogArr:resultLog[] = new Array();
-	private answerList:string[][][] = new Array();	//発見した解答のリスト
+	private resultLogArr:ResultLog[] = new Array();
+	private answerList:Num[][] = new Array();	//発見した解答のリスト
 	constructor(height:number,width:number)
 	constructor(url:string)
 	
@@ -105,10 +104,9 @@ export class HashiBoard {
 
 	public getBoardNum(depth:number):Num[][]{
 		let boardNum:Num[][] = new Array(this.height);
-		for(let i:number  = 0; i++; i< this.height){
-			boardNum[i] = new Array(this.width);
-		}
+
 		this.numIdMap.forEach((rowIds,row) =>{
+			boardNum[row] = new Array(this.width);
 			rowIds.forEach((id,col) =>{
 				if(id >= 0){
 					boardNum[row][col] = this.numDict[depth][id];
@@ -130,13 +128,9 @@ export class HashiBoard {
 			return result;
 		}
 		if(maxdepth>0){
-			console.log("@trial 1");
-			//仮定処理の初期化
-			this.numsForTrialStack = new Array(maxdepth);
-			this.numsForTrialStack[0] = new Array(this.numCount);
-			console.log("@trySetRemain0");
+			// console.log("@trial 1");
+			// console.log("@trySetRemain0");
 			for(let i:number = 0;i < this.numCount;i++){
-				this.numsForTrialStack[0][i] = i;
 
 				if(this.trySetRemain0(1,i)){
 					result = this.logicSolve(0,true);
@@ -149,7 +143,7 @@ export class HashiBoard {
 			}
 			
 			//一段仮定(先読み)
-			console.log("@trialSolve");
+			// console.log("@trialSolve");
 			while(this.trialSolve(1,1)){
 				result = this.logicSolve(0,false);
 				if(result.charAt(0) == "9"){
@@ -160,8 +154,8 @@ export class HashiBoard {
 			}
 
 			//効率化多段仮定
-			console.log("@trialSolve-2");
 			if(maxdepth > 1){
+				// console.log("@trialSolve-2");
 				while(this.trialSolve(1,maxdepth)){
 					result = this.logicSolve(0,false);
 					if(result.charAt(0) == "9"){
@@ -181,32 +175,26 @@ export class HashiBoard {
 		let numId:number|undefined = this.numsToCheckStack.pop();
 		let fromNum:Num;
 		let logicResult:[[number[],string],number];
-		let logicDoneFlg:boolean = false;
 		let islandCheckResult:boolean;
 		do{
 			//本数確定系ループ
 			do{
-				logicDoneFlg = false;
 				//島手筋ループ
 				while(typeof numId === 'number'){
 					//数字手筋ループ
 					fromNum = this.getDepthNum(depth,numId);
 					logicResult = fromNum.checkLogics(true);
-					console.log(fromNum.getAddress());
-					console.log(logicResult[0]);
 					switch(logicResult[0][1].charAt(0)){
 						case "9":	//破綻またはエラー
+							// console.log("depth=" + depth + " " + fromNum.getAddress() + " " + logicResult[0]);
 							return logicResult[0][1]
 						case "0":	//変化なし
-							if(depth>0){
-								this.numsForTrialStack[depth].push(numId);
-							}
 							break;
 						default:	//手筋実行あり(case "1")
-							logicDoneFlg = true;
+							// console.log("depth=" + depth + " " + fromNum.getAddress() + " " + logicResult[0]);
 							//仮定でない場合、確定内容の履歴を作成
 							if(depth == 0){
-								this.resultLogArr.push(new resultLog(numId,numId,logicResult[0][0],logicResult[0][1]));
+								this.resultLogArr.push(new ResultLog(numId,numId,logicResult[0][0],logicResult[0][1]));
 							}
 							logicResult[0][0].forEach((hon,dir) => this.drawLine(depth,fromNum,logicResult[1],hon,dir));
 							//残り本数が0の場合は島に伝える
@@ -223,43 +211,40 @@ export class HashiBoard {
 			}while(islandCheckResult)
 			if(depth == 0 && useCountFlg){
 				this.checkMinHonsu(depth);
-				numId = this.numsToCheckStack.pop();
 			}
+			numId = this.numsToCheckStack.pop();
 		}while(typeof numId === 'number')
 		return this.checkResult(depth);
 	}
 
-	//保留した基本手筋を実行する場合に使用
-	private execNumberLogic(targetId:number,targetNum:Num,depth:number,logicResult:[[number[],string],number]){
-		logicResult[0][0].forEach((hon,dir) => this.drawLine(depth,targetNum,logicResult[1],hon,dir));
-		//残り本数が0の場合は島に伝える
-		if(logicResult[1] == 0){
-			(this.islands.get(targetNum.getParentIslandId()) as Island).inactivateNum(depth,targetId);
-		}
+	private initDepth(depth:number):void{
+		this.islands.forEach((isl) => isl.makeNextDepth(depth));
+		this.numDict[depth] = this.numDict[depth - 1].concat();
 	}
 
 	private trialSolve(depth:number,maxDepth:number):boolean{
 		let result:boolean;
-		let numId:number;
-		while(this.numsForTrialStack[depth-1].length > 0){
-			numId = this.numsForTrialStack[depth-1].pop() as number;
+		
+		for(let i:number = 0; i < this.numCount; i++){
 			//左と上向き仮定
-			for(let i:number = 0; i < 2; i++){
-				if(this.numDict[depth-1][numId].getRemain4way()[i] > 0){
-					result = this.tryDir(depth,maxDepth,numId,i);
+			for(let j:number = 0; j < 2; j++){
+				if(this.numDict[depth-1][this.currentId].getRemain4way()[j] > 0){
+					result = this.tryDir(depth,maxDepth,this.currentId,j);
 					if(result){
 						return result;
 					};
 				}
 			}
+			this.currentId = (this.currentId + 1) % this.numCount;
 		};
 		return false;
 	}
 
 	private tryDir(depth:number,maxDepth:number,tryTargetId:number,dir:number):boolean{
-		let prevTarget:Num = this.numDict[depth][tryTargetId];
+		//仮定するまえに手筋適用可能な有意仮定かで実行の足切り
+		let prevTarget:Num = this.numDict[depth-1][tryTargetId];
 		let tryTargetId2:number = prevTarget.getSurNumId()[dir];
-		let prevTarget2:Num = this.numDict[depth][tryTargetId2];
+		let prevTarget2:Num = this.numDict[depth-1][tryTargetId2];
 		let resultCheck1:[[number[],string],number] = prevTarget.trySetRemain1way(dir,0);
 		let resultCheck2:[[number[],string],number] = prevTarget2.trySetRemain1way((dir + 2) % 4,0);
 		//このresultCheckは破綻にならない（破綻する場合通常手筋の適用範囲内）
@@ -267,46 +252,40 @@ export class HashiBoard {
 		//有効な仮定の場合
 		if(resultCheck1[0][1].charAt(0) == "1" || resultCheck2[0][1].charAt(0) == "1"){
 			let solveResultCode:string;
-			let tryResult:boolean;
-			//次の深さの仮定を用意
-			this.islands.forEach((isl) => isl.makeNextDepth(depth));
-			this.numDict[depth] = this.numDict[depth - 1].concat();
+			//仮定初期化
+			this.initDepth(depth);
 
 			let tryTarget:Num = this.getDepthNum(depth,tryTargetId);
 			let tryTarget2:Num = this.getDepthNum(depth,tryTargetId2);
 			
 			//引き本数0の仮定
-			tryTarget.setRemain1way(dir,0);
-			tryTarget2.setRemain1way((dir + 2) % 4,0);
-			if(resultCheck1[0][1].charAt(0) == "1"){
-				this.execNumberLogic(tryTargetId,tryTarget,depth,resultCheck1);
+			// console.log("try-remain0 starts id= " + tryTargetId + " dir= " + dir);
+			if(tryTarget.setRemain1way(dir,0)){
+				this.numsToCheckStack.push(tryTargetId);
 			}
-			if(resultCheck2[0][1].charAt(0) == "1"){
-				this.execNumberLogic(tryTargetId2,tryTarget2,depth,resultCheck2);
+			if(tryTarget2.setRemain1way((dir + 2) % 4,0)){
+				this.numsToCheckStack.push(tryTargetId2);
 			}
-			this.numsForTrialStack[depth] = new Array();
 			solveResultCode = this.logicSolve(depth,false);
 			if(solveResultCode.charAt(0) == "9"){
-				this.drawFrom(depth - 1,tryTarget,1,dir);
+				if(depth == 1){
+					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,ResultLog.defaultResultArr[0][dir],"1T01"));
+				}
+				// console.log("try-remain0 succeeded drawLine Id=" + tryTargetId + " dir= " + dir);
+				this.drawFrom(depth - 1,tryTargetId,1,dir);
 				return true;
 			}else if(solveResultCode =="010"){
 				//解答を見つけた場合、リストに加えてそれ以外の場合を継続して探索
 				this.addAnswer(depth);
-				return true;
+				return false;
 			}else if(depth < maxDepth){
 				//次の深さの仮定を実行する
-				tryResult = this.trialSolve(depth + 1,maxDepth);
-				while(tryResult){
+				while(this.trialSolve(depth + 1,maxDepth)){
 					solveResultCode = this.logicSolve(depth,false);
 					if(solveResultCode.charAt(0) == "9"){
-						this.drawFrom(depth - 1,tryTarget,1,dir);
-						return true;
-					}else if(solveResultCode =="010"){
-						//解答を見つけた場合、リストに加えてそれ以外の場合を継続して探索
-						this.addAnswer(depth);
+						this.drawFrom(depth - 1,tryTargetId,1,dir);
 						return true;
 					}
-					tryResult = this.trialSolve(depth + 1,maxDepth);
 				}
 			}
 		}
@@ -314,19 +293,23 @@ export class HashiBoard {
 
 		//線引き仮定：効率化のため次の深さの探索は行わない：ここを省いても全探索は保証できる
 		if(prevTarget.getHands4way()[dir] == 0){
-			this.islands.forEach((isl) => isl.makeNextDepth(depth));
-			this.numDict[depth] = this.numDict[depth-1].concat();
-			
-			let tryTarget:Num = this.getDepthNum(depth,tryTargetId);
-			this.drawFrom(depth,tryTarget,1,dir);
+			// console.log("try draw starts id= " + tryTargetId + " dir= " + dir);
+			//仮定初期化
+			this.initDepth(depth);
+
+			this.drawFrom(depth,tryTargetId,1,dir);
 			let solveResultCode:string = this.logicSolve(depth,false);
 			if(solveResultCode.charAt(0) == "9"){
 				let nextTarget = this.getDepthNum(depth - 1,tryTargetId);
 				let nextTarget2 = this.getDepthNum(depth - 1,nextTarget.getSurNumId()[dir]);
+				if(depth == 1){
+					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,ResultLog.defaultResultArr[1][dir],"1T02"));
+					// console.log("try draw succeeded id= " + tryTargetId + "id2 = " + tryTargetId2);
+				}
 				nextTarget.setRemain1way(dir,0);
 				nextTarget2.setRemain1way((dir + 2) % 4,0);
-				this.numsToCheckStack.push(nextTarget.getId());
-				this.numsToCheckStack.push(nextTarget2.getId());
+				this.numsToCheckStack.push(tryTargetId);
+				this.numsToCheckStack.push(tryTargetId2);
 				return true;
 			}
 			//全探索とは無関係のため、破綻以外は解答を見つけてもスルー
@@ -344,22 +327,23 @@ export class HashiBoard {
 	private trySetRemain0(depth:number,tryTargetId:number):boolean{
 		let targetNum0:Num = this.numDict[depth-1][tryTargetId];
 		let targetRemain:number = targetNum0.getRemainSelf();
-		if(targetRemain > 2 || targetRemain == 0 || (this.islands.get(targetNum0.getParentIslandId()) as Island).getNumList(depth).length == 1){
+		if(targetRemain > 2 || targetRemain == 0 || (this.islands.get(targetNum0.getParentIslandId()) as Island).getNumList(depth-1).length == 1){
 			return false;
 		}else{
 			//残り本数と同じ残り引き本数の数字がない場合無意味なのでスキップ
 			if(targetNum0.getRemain4way().findIndex(val => val == targetRemain) < 0){
 				return false;
 			}
-
-			this.islands.forEach((isl) => isl.makeNextDepth(depth));
-			this.numDict[depth] = this.numDict[depth - 1].concat();
+			// console.log("try-deadend id=" + tryTargetId);
+			//仮定初期化
+			this.initDepth(depth);
 			let hands4way:number[] = targetNum0.getHands4way();
 			let remain4way:number[] = targetNum0.getRemain4way();
 			let handsRemainDirCount:number = 0;
 			let handsRemainDir:number = 0;
 			targetNum0.getSurNumId().forEach((set0Id,dir) => {
-				if(hands4way[dir]>0){
+				// console.log("dir=" + dir);
+				if(hands4way[dir]>0 && remain4way[dir] == hands4way[dir]){
 					this.getDepthNum(depth,set0Id).setRemain1way((dir + 2) % 4,0);
 					this.numsToCheckStack.push(set0Id);
 					if(remain4way[dir] > 0){
@@ -369,59 +353,60 @@ export class HashiBoard {
 				}
 			});
 			let solveResult:string = this.logicSolve(depth,false);
-			let tryResult:boolean = false;
-			//破綻した場合かつ引けないと仮定した方向(手がつながっている方向で残り1本以上)が1方向のみの場合
-			if(solveResult.charAt(0) == "9" && handsRemainDirCount == 1){
-				this.drawLine(depth - 1, targetNum0,targetNum0.getRemainSelf() - 1, 1, handsRemainDir);
-				tryResult = true;
-			}
-			let tryTarget:Num = this.numDict[depth][tryTargetId];
-
-			//調査対象に線を引いていた場合無効
-			let failFlg:boolean = tryTarget.getHands4way().findIndex((hon,dir) => {
-				(hon > 0) && (hands4way[dir] == 0)
-			}) >= 0;
-
-			//
-			if(!failFlg){
-				let targetIsland:Island = this.islands.get(tryTarget.getParentIslandId()) as Island
-				if((targetIsland.getActiveNumList(depth).length - Number(tryTarget.getRemainSelf())) == 0){
-					targetNum0.getSurNumId().forEach((id,dir) =>{
-						if(hands4way[dir] == 0 && remain4way[dir] == targetRemain){
-							this.numDict[depth - 1][id].setIsEndSurTrue((dir + 2) % 4,targetRemain);
-							this.numsToCheckStack.push(id);
+			//破綻した場合のみ盤面進行
+			if(solveResult.charAt(0) == "9"){
+				//引けないと仮定した方向(手がつながっている方向で残り1本以上)が1方向のみの場合
+				if(handsRemainDirCount == 1){
+					// console.log("drawLine Id=" + tryTargetId + " dir= " + handsRemainDir);
+					this.drawFrom(depth - 1, tryTargetId, 1, handsRemainDir);
+					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,ResultLog.defaultResultArr[1][handsRemainDir],"1T03"));
+					return true;
+				}else{
+					let tryTarget:Num = this.numDict[depth][tryTargetId];
+		
+					//調査対象に線を引いていた場合無効
+					let failFlg:boolean = tryTarget.getHands4way().findIndex((hon,dir) => {
+						hon > hands4way[dir]
+					}) >= 0;
+		
+					//
+					if(!failFlg){
+						let targetIsland:Island = this.islands.get(tryTarget.getParentIslandId()) as Island
+						if((targetIsland.getActiveNumList(depth).length - Number(tryTarget.getRemainSelf())) == 0){
+							targetNum0.getSurNumId().forEach((id,dir) =>{
+								if(hands4way[dir] == 0 && remain4way[dir] == targetRemain){
+									// console.log("setRem0 Id=" + id + " dir= " + (dir + 2) % 4);
+									this.numDict[depth - 1][id].setIsEndSurTrue((dir + 2) % 4,targetRemain);
+									this.numsToCheckStack.push(id);
+									this.resultLogArr.push(new ResultLog(tryTargetId,id,ResultLog.defaultResultArr[1][dir],"1T02"));
+								}
+							});
+							return true;
 						}
-					});
-					tryResult = true;
+					}
 				}
 			}
-			return tryResult;
+			return false;
 		}
-	}
-
-	/**
-	 * 仮定の方式に合わせてスタックをリセットする
-	 * @param depth スタックを再設定する仮定の深さ
-	 * @param method 仮定方法-0:効率化あり,1:全探索
-	 */
-	private resetTrialStack(depth:number,method:number){
-
 	}
 
 	private checkResult(depth:number):string{
 		let islandsCount:number = 0;
 		let activeIslandsCount:number = 0;
-		let activeIslandId:number = 0;
 		for(let island of this.islands.values()){
 			islandsCount += Number(island.getNumList(depth).length > 0);
 			activeIslandsCount += Number(island.getActiveNumList(depth).length > 0);
-			activeIslandId = island.getId();
 		}
 		if(activeIslandsCount > 0){
-			return "091"
+			if(activeIslandsCount < islandsCount){
+				//孤立島あり
+				return "902"
+			}else{
+				return "091"
+			}
 		}else{
 			if(islandsCount > 1){
-				return "902"
+				return "903"
 			}else{
 				return "010";
 			}
@@ -443,28 +428,18 @@ export class HashiBoard {
 	 * @param hon 引き本数
 	 * @param dir 引き方向
 	 */
-	private drawFrom(depth:number,fromNum:Num,hon:number,dir:number){
+	private drawFrom(depth:number,fromNumId:number,hon:number,dir:number){
+		let fromNum:Num = this.getDepthNum(depth,fromNumId);
 		let fromRemain:number = fromNum.drawIn(dir,hon);
-		let nextTarget:Num
-		if(fromRemain < 2){
-			fromNum.getSurNumId().forEach((id,nextDir) => {
-				if(id >= 0){
-					nextTarget = this.getDepthNum(depth,id);
-					if(nextTarget.getRemainSelf() > 0){
-						if(nextTarget.setRemain1way((nextDir+2)%4,fromRemain)){
-							this.numsToCheckStack.push(id);
-						};
-					}
-				}
-			});
+
+		//線と引き先
+		if(hon > 0){
+			this.drawLine(depth,fromNum,fromRemain,hon,dir);
 			//0になった場合非活性化する
 			if(fromRemain == 0){
 				(this.islands.get(fromNum.getParentIslandId()) as Island).inactivateNum(depth,fromNum.getId());
 			}
 		}
-		
-		//線と引き先
-		this.drawLine(depth,fromNum,fromRemain,hon,dir);
 
 	}
 	
@@ -552,11 +527,6 @@ export class HashiBoard {
 					}
 					break;
 			}
-			if(fromRemain == 0){
-				if(toNum.setRemain1way((dir+2)%4,0)){
-					this.numsToCheckStack.push(toNum.getId());
-				};
-			}
 
 			//数字引き
 			toRemain = toNum.drawIn((dir+2)%4,hon);
@@ -600,7 +570,7 @@ export class HashiBoard {
 	private mergeIslands(depth:number,rootIslandId:number,mergeIslandId:number):void{
 		let mergeIsland:Island =this.islands.get(mergeIslandId) as Island;
 		mergeIsland.getNumList(depth).forEach((id)=>{
-			this.numDict[depth][id].setParentIslandId(rootIslandId);
+			this.getDepthNum(depth,id).setParentIslandId(rootIslandId);
 		});
 		(this.islands.get(rootIslandId) as Island).mergeIsland(depth,mergeIsland);
 	}
@@ -609,6 +579,8 @@ export class HashiBoard {
 	private checkEndIslands(depth:number):boolean{
 		let result:boolean =false;
 		let execResult:boolean;
+		let execResult0:boolean;
+		let execResult1:boolean;
 		this.islands.forEach((isl) => {
 			//島ごとに出口が一つだけになっているか調べる
 			switch(isl.getActiveNumList(depth).length){
@@ -645,19 +617,16 @@ export class HashiBoard {
 								let tempResult:boolean = false;
 								let nextTarget0:Num = this.getDepthNum(depth,numIds[0]);
 								let nextTarget1:Num = this.getDepthNum(depth,id);
-								execResult = nextTarget0.setEnd();
-								tempResult = tempResult || execResult;
-								execResult = nextTarget1.setEnd();
-								tempResult = tempResult || execResult;
-								let remainDir:number = nextTarget0.getRemain4way()[dir];
-								if(remainDir <= 2){
-									execResult = nextTarget0.setIsEndSurTrue(dir,remainDir);
-									tempResult = tempResult || execResult;
-								}
-								remainDir = nextTarget1.getRemain4way()[(dir+2)%4];
-								if(remainDir <= 2){
-									execResult = nextTarget1.setIsEndSurTrue((dir+2)%4,remainDir);
-									tempResult = tempResult || execResult;
+								execResult0 = nextTarget0.setEnd();
+								execResult1 = nextTarget0.setEnd();
+								tempResult = tempResult || execResult0 || execResult1;
+								let remainDir0:number = nextTarget0.getRemain4way()[dir];
+								let remainDir1 = nextTarget1.getRemain4way()[(dir+2)%4];
+								
+								if(remainDir0 <= 2 && remainDir0 == remainDir1 &&  remainDir0 == nextTarget0.getRemainSelf() &&  remainDir0 == nextTarget1.getRemainSelf()){
+									execResult0 = nextTarget0.setIsEndSurTrue(dir,remainDir0);
+									execResult1 = nextTarget1.setIsEndSurTrue((dir+2)%4,remainDir1);
+									tempResult = tempResult ||execResult0 || execResult1;
 								}
 								if(tempResult){
 									this.numsToCheckStack.push(numIds[0]);
@@ -669,32 +638,43 @@ export class HashiBoard {
 					}
 					break;
 			}
+			isl.setIsIslandEndChecked(depth,true);
 		});
 		return result;
 	}
 
-	private checkMinHonsu(depth:number):void{
+	private checkMinHonsu(depth:number):boolean{
 		let target:Num;
+		let remain1:number
+		let remain2:number
 		for(let i:number  = 0; i < this.numCount; i ++){
 			for(let area:number = 0; area < 4; area++){
-				if(this.numDict[depth][this.currentId].checkMin1(area) == 2){
-					if(this.checkMinHonsuSub(depth,this.currentId,area) == 2){
-						target = this.getDepthNum(depth,this.currentId);
-
-						let hon:number = target.getRemain4way()[(area + 2) % 4];
-						this.drawFrom(depth,target,hon,(area + 2) % 4);
-
-						hon = target.getRemain4way()[(area + 3) % 4];
-						this.drawFrom(depth,target,hon,(area + 3) % 4);
-
-						this.currentId = (this.currentId +1) % this.numCount;
-						return;
+				remain1 = this.numDict[depth][this.currentId].getRemain4way()[(area + 2) % 4];
+				remain2 = this.numDict[depth][this.currentId].getRemain4way()[(area + 3) % 4];
+				if(remain1 > 0 || remain2 >0){
+					if(this.numDict[depth][this.currentId].checkMin1(area) == 2 ){
+						if(this.checkMinHonsuSub(depth,this.currentId,area) == 2){
+							target = this.getDepthNum(depth,this.currentId);
+							let result4way:number[] = target.getExecMin1result(area);
+							result4way.forEach((hon,dir) =>{
+								if(hon > 0){
+									// console.log("drawLine Id=" + this.currentId + "dir= " + dir);
+									this.drawFrom(depth,this.currentId,hon,dir);
+								}
+							});
+							this.resultLogArr.push(new ResultLog(i,i,result4way,"1M00"));
+							//残りの数字のチェックは必要な時に再度実行でよいので手筋チェック成功時点で一旦打ち切り
+							this.currentId = (this.currentId +1) % this.numCount;
+							return true;
+						}
+						
 					}
-					
+
 				}
 			}
 			this.currentId = (this.currentId +1) % this.numCount;
 		}
+		return false;
 	}
 
 	private checkMinHonsuSub(depth:number,id:number,area:number):number{
@@ -776,7 +756,15 @@ export class HashiBoard {
 	}
 
 	private addAnswer(depth:number):void{
-		//TODO
+		let newAns:Num[] = new Array(this.numCount);
+		this.numDict[depth].forEach((currentNum,i) => {
+			newAns[i] = currentNum.clone(depth);
+		});
+		this.answerList.push(newAns);
+	}
+
+	public getResultLogArr():ResultLog[]{
+		return this.resultLogArr;
 	}
 	
 }

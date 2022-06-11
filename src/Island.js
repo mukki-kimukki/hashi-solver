@@ -1,9 +1,9 @@
-export class Island{
-    private islandId:number;
-    private numList:number[][];   //仮置き段階毎の島に属する全ての数字のIDリスト
-    private activeNumList:number[][];  //仮置き段階ごとに残りが0でない数字のリスト
-	private isIslandEndChecked:boolean[] = [false];	//手筋チェック済フラグ：無駄な検証をスキップ
-    constructor(id:number){
+"use strict";
+exports.__esModule = true;
+exports.Island = void 0;
+var Island = /** @class */ (function () {
+    function Island(id) {
+        this.isIslandEndChecked = [false]; //手筋チェック済フラグ：無駄な検証をスキップ
         this.islandId = id;
         this.numList = [[id]];
         this.activeNumList = [[id]];
@@ -12,58 +12,51 @@ export class Island{
      * mergeTargetをこの島にマージする
      * @param mergeTarget マージする島
      */
-    public mergeIsland(depth:number,mergeTarget:Island):void{
+    Island.prototype.mergeIsland = function (depth, mergeTarget) {
         //リストのマージ
         this.numList[depth] = this.numList[depth].concat(mergeTarget.getNumList(depth));
         this.activeNumList[depth] = this.activeNumList[depth].concat(mergeTarget.getActiveNumList(depth));
         mergeTarget.inactivateMergedIsland(depth);
-        this.isIslandEndChecked[depth] =false;
-    }
-
-    public getNumList(depth:number):number[]{
+        this.isIslandEndChecked[depth] = false;
+    };
+    Island.prototype.getNumList = function (depth) {
         return this.numList[depth];
-    }
-    
-    public getActiveNumList(depth:number):number[]{
+    };
+    Island.prototype.getActiveNumList = function (depth) {
         return this.activeNumList[depth];
-    }
-
-    public inactivateMergedIsland(depth:number):void{
+    };
+    Island.prototype.inactivateMergedIsland = function (depth) {
         this.numList[depth] = [];
         this.activeNumList[depth] = [];
-    }
-
+    };
     /**
      * 残り0本になった数字のidを数字の所属する島に伝える
      * @param deleteId 残り0本となった数字のid
      */
-    public inactivateNum(depth:number,deleteId:number):void{
-        this.activeNumList[depth].splice(this.activeNumList[depth].indexOf(deleteId),1);
-        this.isIslandEndChecked[depth] =false;
-    }
-
-    public getIsIslandEndChecked(depth:number):boolean{
+    Island.prototype.inactivateNum = function (depth, deleteId) {
+        this.activeNumList[depth].splice(this.activeNumList[depth].indexOf(deleteId), 1);
+        this.isIslandEndChecked[depth] = false;
+    };
+    Island.prototype.getIsIslandEndChecked = function (depth) {
         return this.isIslandEndChecked[depth];
-    }
-
-    public setIsIslandEndChecked(depth:number,flg:boolean):void{
+    };
+    Island.prototype.setIsIslandEndChecked = function (depth, flg) {
         this.isIslandEndChecked[depth] = flg;
-    }
-
-    public makeNextDepth(depth:number):void{
+    };
+    Island.prototype.makeNextDepth = function (depth) {
         this.deleteTrial(depth);
         this.numList[depth] = this.numList[depth - 1].concat();
         this.activeNumList[depth] = this.activeNumList[depth - 1].concat();
         this.isIslandEndChecked[depth] = this.isIslandEndChecked[depth - 1];
-    }
-
-    public deleteTrial(depth:number):void{
+    };
+    Island.prototype.deleteTrial = function (depth) {
         this.numList.splice(depth);
         this.activeNumList.splice(depth);
         this.isIslandEndChecked.splice(depth);
-    }
-
-    public getId():number{
+    };
+    Island.prototype.getId = function () {
         return this.islandId;
-    }
-}
+    };
+    return Island;
+}());
+exports.Island = Island;

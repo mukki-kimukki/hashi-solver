@@ -1,12 +1,23 @@
 {
   "name": "hashi",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack --mode=development",
+    "start": "webpack-dev-server --mode=development"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "ts-loader": "^9.2.4",
+    "typescript": "^4.3.5",
+    "webpack": "^5.47.1",
+    "webpack-cli": "^4.7.2",
+    "webpack-dev-server": "^3.11.2"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "description": ""
 }

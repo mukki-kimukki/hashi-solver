@@ -6,13 +6,6 @@ export class HashiController{
         this.hashiBoard = new HashiBoard(url);
     }
 
-    public duplicate():void{
-        const startTime = new Date().getTime();
-        //this.hashiBoard =JSON.parse(JSON.stringify(this.hashiBoard)) as HashiBoard;
-        const endTime = new Date().getTime();
-        console.log("duplicated: " + (endTime -startTime) + " ms");
-    }
-
     public solve(maxdepth:number):void{
         console.log("start");
         const startTime = new Date().getTime();
@@ -21,6 +14,7 @@ export class HashiController{
         console.log("finished: " + (endTime -startTime) + " ms");
         console.log(result);
         console.log(ResultPatterns.resultDict.get(result));
+        this.hashiBoard.getResultLogArr().forEach(log=>log.consoleLog());
         this.output(0);
             
     }
