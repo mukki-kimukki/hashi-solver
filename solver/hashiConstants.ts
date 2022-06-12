@@ -1,10 +1,13 @@
-export class ResultPatterns{
+export class hashiConstants{
+    public static readonly defaultResultArr:number[][][] = [[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],[[-1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,-1]]];
+    public static readonly alreadyCheckedResult:[[number[],string],number]=[[[0,0,0,0],"001"],8];
+    public static readonly numRemain0Result:[[number[],string],number]=[[[0,0,0,0],"002"],0];
     //0は変化なし
     //1~8は数字手筋
     //Xは数字共通
     //Iは島手筋
     //9は破綻やソルバー設計エラー
-    public static resultDict =  new Map([
+    public static readonly resultDict =  new Map([
         ['000','変化なし'],
         ['001','チェック済み'],
         ['002','残り0本'],

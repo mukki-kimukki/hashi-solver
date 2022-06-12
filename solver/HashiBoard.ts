@@ -4,7 +4,7 @@ import {Empty} from "./Empty";
 import {Island} from "./Island";
 import {Num} from "./Num";
 import {ResultLog} from"./ResultLog";
-
+import { hashiConstants } from "./hashiConstants";
 
 export class HashiBoard {
 
@@ -114,6 +114,10 @@ export class HashiBoard {
 			});
 		});
 		return boardNum;
+	}
+
+	public getNumDict():Num[][]{
+		return this.numDict;
 	}
 
 	public getBoardAbst():number[][]{
@@ -269,7 +273,7 @@ export class HashiBoard {
 			solveResultCode = this.logicSolve(depth,false);
 			if(solveResultCode.charAt(0) == "9"){
 				if(depth == 1){
-					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,ResultLog.defaultResultArr[0][dir],"1T01"));
+					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,hashiConstants.defaultResultArr[0][dir],"1T01"));
 				}
 				// console.log("try-remain0 succeeded drawLine Id=" + tryTargetId + " dir= " + dir);
 				this.drawFrom(depth - 1,tryTargetId,1,dir);
@@ -303,7 +307,7 @@ export class HashiBoard {
 				let nextTarget = this.getDepthNum(depth - 1,tryTargetId);
 				let nextTarget2 = this.getDepthNum(depth - 1,nextTarget.getSurNumId()[dir]);
 				if(depth == 1){
-					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,ResultLog.defaultResultArr[1][dir],"1T02"));
+					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,hashiConstants.defaultResultArr[1][dir],"1T02"));
 					// console.log("try draw succeeded id= " + tryTargetId + "id2 = " + tryTargetId2);
 				}
 				nextTarget.setRemain1way(dir,0);
@@ -359,7 +363,7 @@ export class HashiBoard {
 				if(handsRemainDirCount == 1){
 					// console.log("drawLine Id=" + tryTargetId + " dir= " + handsRemainDir);
 					this.drawFrom(depth - 1, tryTargetId, 1, handsRemainDir);
-					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,ResultLog.defaultResultArr[1][handsRemainDir],"1T03"));
+					this.resultLogArr.push(new ResultLog(tryTargetId,tryTargetId,hashiConstants.defaultResultArr[1][handsRemainDir],"1T03"));
 					return true;
 				}else{
 					let tryTarget:Num = this.numDict[depth][tryTargetId];
@@ -378,7 +382,7 @@ export class HashiBoard {
 									// console.log("setRem0 Id=" + id + " dir= " + (dir + 2) % 4);
 									this.numDict[depth - 1][id].setIsEndSurTrue((dir + 2) % 4,targetRemain);
 									this.numsToCheckStack.push(id);
-									this.resultLogArr.push(new ResultLog(tryTargetId,id,ResultLog.defaultResultArr[1][dir],"1T02"));
+									this.resultLogArr.push(new ResultLog(tryTargetId,id,hashiConstants.defaultResultArr[1][dir],"1T02"));
 								}
 							});
 							return true;

@@ -1,9 +1,18 @@
 import { HashiBoard } from "./HashiBoard";
-import { ResultPatterns } from "./hashiConstants";
+import { hashiConstants } from "./hashiConstants";
+import { Num } from "./Num";
+import { ResultLog } from "./ResultLog";
 export class HashiController{
     private hashiBoard:HashiBoard;
-    constructor(url:string){
-        this.hashiBoard = new HashiBoard(url);
+    private solveTime:number;
+
+    constructor(url?:string){
+        this.solveTime=0;
+        if(typeof(url) ==='undefined'){
+            this.hashiBoard = new HashiBoard(10,10);
+        }else{
+            this.hashiBoard = new HashiBoard(url);
+        }
     }
 
     public solve(maxdepth:number):void{
@@ -11,9 +20,10 @@ export class HashiController{
         const startTime = new Date().getTime();
         let result = this.hashiBoard.solve(maxdepth);
         const endTime = new Date().getTime();
-        console.log("finished: " + (endTime -startTime) + " ms");
+        this.solveTime = endTime -startTime;
+        console.log("finished: " + (this.solveTime) + " ms");
         console.log(result);
-        console.log(ResultPatterns.resultDict.get(result));
+        console.log(hashiConstants.resultDict.get(result));
         this.hashiBoard.getResultLogArr().forEach(log=>log.consoleLog());
         this.output(0);
             
@@ -66,5 +76,17 @@ export class HashiController{
             });
         });
         describe.forEach((row) => console.log(row.join('') + '\n'));
+    }
+
+    public getBoardSize():number[]{
+        return [this.hashiBoard.getWidth(),this.hashiBoard.getHeight()];
+    }
+
+    public getNumDict():Num[][]{
+        return this.hashiBoard.getNumDict();
+    }
+
+    public getResultLog():ResultLog[]{
+        return this.hashiBoard.getResultLogArr();
     }
 }

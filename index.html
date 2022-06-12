@@ -4,12 +4,33 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>hashi Solver</title>
+    <script type="module" src="EventController.js"></script>
+    <title>橋をかけろソルバー</title>
 </head>
 <body>
     <div id = "temp">
-        <input type="text" name="url" id="url">
-        <button type="button" onclick=""></button>
+        <label>
+            <input type="checkbox" name="autoImport" value="true" id="autoImport" onchange="changeAutoImport()">
+            自動URL取り込み
+        </label></br>
+        <button type="button" id="importButton" onclick="import()" style="visibility:visible;">URL取り込み</button>
+
+        <label><input type="text" name="url" id="url" onchange="importUrlIfAuto()">
+            URL入力欄
+        </label><br>
+
+    
+        <label>
+            <input type="checkbox" name="autoSolve" value="true" id="autoSolve" onchange="changeAutoSolve()">
+            自動解答
+        </label><br>
+        <label><input type="text" name="solveDepth" id="solveDepth" inputmode="numeric">
+            仮定深度(数字で入力)
+        </label><br>
+        <button type="button" id="solvetButton" onclick="solve()" style="visibility:visible;">解答開始</button></br>
+        
     </div>
+    <canvas id="numbers" width="300" height="300" style="z-index: 2;"></canvas>
+    <canvas id="lines" width="300" height="300" style="z-index: 1;"></canvas>
 </body>
 </html>

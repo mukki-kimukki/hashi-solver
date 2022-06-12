@@ -1,6 +1,9 @@
+import { hashiConstants } from "./hashiConstants";
+
 export class Num {
 
 	private id:number;
+	private originalNumber:number;
 	private depth:number;
 	private parentIslandId:number;
 	private address:[number,number];
@@ -31,6 +34,7 @@ export class Num {
 			this.depth = depth;
 			this.parentIslandId = id;
 			this.address = [y,x];
+			this.originalNumber = board[y][x];
 			this.remainSelf = board[y][x];
 	
 			let pos:number = -1;						//縦または横の相対位置:左から調べるので初期値は-1
@@ -160,6 +164,7 @@ export class Num {
 		}else{
 			let original = y as Num;
 			this.id = original.getId();
+			this.originalNumber = original.getOriginalNumber();
 			this.depth = depth;
 			this.address = original.getAddress();
 			this.surNumId = original.getSurNumId().concat();
@@ -175,6 +180,10 @@ export class Num {
 
 	public getId():number{
 		return this.id;
+	}
+
+	public getOriginalNumber():number{
+		return this.originalNumber;
 	}
 
 	public getDepth():number{
@@ -352,7 +361,7 @@ export class Num {
 	 */
 	public checkLogics(execFlg : boolean):[[number[],string],number]{
 		if(this.isLogicChecked){
-			return [[[0,0,0,0],"001"],this.remainSelf];
+			return hashiConstants.alreadyCheckedResult;
 		}
 		let numberLogicResult:[number[],string]
 		let sumRemain4way = this.remain4way.reduce((prev,cur) =>prev + cur);
@@ -379,7 +388,8 @@ export class Num {
 			return [[[0,0,0,0],"901"],0];
 		}else if(sumRemain4way == this.remainSelf){
 			if(this.remainSelf == 0){
-				numberLogicResult = [[0,0,0,0],"002"];
+				this.isLogicChecked=true;
+				return hashiConstants.numRemain0Result;
 			}else{
 				numberLogicResult = [this.remain4way.concat(),"1X01"];	//全て腕を使い切るパターン
 			}
@@ -415,6 +425,9 @@ export class Num {
 			}
 		}
 		if(numberLogicResult[1].charAt(0) == "0"){
+			if(execFlg){
+				this.isLogicChecked = true;
+			}
 			return [numberLogicResult,this.remainSelf];
 		}else{
 			// console.log("id= " + this.id + " remainSelf= " + this.remainSelf + " remain4way = " + this.remain4way);
