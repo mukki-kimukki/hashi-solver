@@ -6,7 +6,7 @@ export class Num {
 	private originalNumber:number;
 	private depth:number;
 	private parentIslandId:number;
-	private address:[number,number];
+	private address:[number,number];	//[y,x]
 	private surNumId:number[] = [-1,-1,-1,-1];
 
 
