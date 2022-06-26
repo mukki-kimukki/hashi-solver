@@ -23,18 +23,25 @@
     
         <label>
             <input type="checkbox" name="autoSolve" value="true" id="autoSolve" onchange="changeAutoSolve()">
-            自動解答
-        </label><br>
+            自動解答&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </label>
         <label><input type="text" name="solveDepth" id="solveDepth" inputmode="numeric">
             仮定深度(数字で入力)
         </label><br>
         <button type="button" id="solveButton" onclick="solve()">解答開始</button></br>
         
     </div>
-    <div id="divCanvas">
-        <canvas class="canvasArea" id="linesCanvas"style="z-index: 1;"></canvas>
-        <canvas class="canvasArea" id="numbersCanvas"style="z-index: 10;" ></canvas>
-        <canvas class="canvasArea" id="maskCanvas"style="z-index: 2;"></canvas>
+    <div>
+        <div id="divStep" class="output">
+            <ul id="stepList">
+            </ul>
+        </div>
+        <div id="divCanvas" class="output">
+            <canvas class="canvasArea" id="linesCanvas"style="z-index: 1;"></canvas>
+            <canvas class="canvasArea" id="linesMaskCanvas"style="z-index: 2;"></canvas>
+            <canvas class="canvasArea" id="numsCanvas"style="z-index: 10;" ></canvas>
+            <canvas class="canvasArea" id="numsMaskCanvas"style="z-index: 11;" ></canvas>
+        </div>
     </div>
 </body>
 </html>

@@ -3,15 +3,39 @@
     margin-top: 50px;
 }
 
+#solveDepth{
+    width: 20px;
+}
 #divCanvas{
     position: relative;
-    top: 20px;
-    left:   50px;
 
 }
 .canvasArea{
     position:absolute;
-    top: 0;
-    left: 0;
-    margin: 0px;
+}
+.output{
+    display: inline-flex;
+}
+
+#divStep{
+    border-style: solid;
+    border: 2px;
+    border-color: black;
+}
+
+#stepList{
+    list-style: none;
+    overflow-y: scroll;
+}
+
+.step{
+    width: 100px;
+    height: 20px;
+    border:1px;
+}
+
+.targetStep{
+    background: #FAA;
+    border: 3px;
+    border-color: tomato;
 }

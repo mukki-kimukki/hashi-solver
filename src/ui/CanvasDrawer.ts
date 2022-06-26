@@ -5,21 +5,24 @@ import { ResultLog } from "../solver/ResultLog";
 export class CanvasDrawer{
     private numsCanvas:HTMLCanvasElement;
     private numsContext:CanvasRenderingContext2D;
+    private numsMaskCanvas:HTMLCanvasElement
+    private numsMaskContext:CanvasRenderingContext2D;
     private linesCanvas:HTMLCanvasElement
     private linesContext:CanvasRenderingContext2D;
-    private maskCanvas:HTMLCanvasElement
-    private maskContext:CanvasRenderingContext2D;
+    private linesMaskCanvas:HTMLCanvasElement
+    private linesMaskContext:CanvasRenderingContext2D;
 
     private clickX:number[] = [];
     private clickY:number[] = [];
     private clickDrag:boolean[] =[];
-    private gridSize:number =30;
-    private lineWidth:number =this.gridSize/15;
-    private lineSpacing:number =this.gridSize/5 ;
-    private fontSize:string = String(this.gridSize) + "px";
+    private gridSize:number;
+    private lineWidth:number;
+    private lineSpacing:number;
+    private fontSize:string;
     private bgColor:string ="white";
     private lineColor:string="black";
     private tgtColor:string="red";
+    private tgtFillColor:string="red";
     
     private boardSize:number[] = [];
     private numDict:Num[][] =[[]];
@@ -29,34 +32,32 @@ export class CanvasDrawer{
     private resultPathArr:Path2D[] = [];//線の描画用
     private resultMaskMap:Map<number,Path2D> = new Map();//2本目を引く際の一本目マスク用
 
-    constructor(){
-        
-        let numsCanvas = document.getElementById("numbersCanvas") as HTMLCanvasElement;
-        let numsContext = numsCanvas.getContext("2d") as CanvasRenderingContext2D;
-        numsContext.strokeStyle = this.lineColor;
-        numsContext.lineWidth = this.lineWidth;
-        
-        this.numsCanvas = numsCanvas;
-        this.numsContext = numsContext;
+    constructor(gridSize:number){
+        this.gridSize = gridSize;
+        this.lineWidth =this.gridSize/15;
+        this.lineSpacing = this.gridSize/5;
+        this.fontSize = String(this.gridSize*3/5) + "px";
+
+        this.numsCanvas = document.getElementById("numsCanvas") as HTMLCanvasElement;
+        this.numsContext = this.numsCanvas.getContext("2d") as CanvasRenderingContext2D;
+        this.numsContext.strokeStyle = this.lineColor;
+        this.numsContext.lineWidth = this.lineWidth;
         
 
-        let linesCanvas = document.getElementById("linesCanvas") as HTMLCanvasElement;
-        let linesContext = linesCanvas.getContext("2d") as CanvasRenderingContext2D;
-        linesContext.strokeStyle = this.lineColor;
-        linesContext.fillStyle = this.bgColor;
-        linesContext.lineWidth = this.lineWidth;
+        this.linesCanvas = document.getElementById("linesCanvas") as HTMLCanvasElement;
+        this.linesContext = this.linesCanvas.getContext("2d") as CanvasRenderingContext2D;
+        this.linesContext.strokeStyle = this.lineColor;
+        this.linesContext.fillStyle = this.bgColor;
+        this.linesContext.lineWidth = this.lineWidth;
 
         
-        this.linesCanvas = linesCanvas;
-        this.linesContext = linesContext;
+        this.linesMaskCanvas = document.getElementById("linesMaskCanvas") as HTMLCanvasElement;
+        this.linesMaskContext = this.linesMaskCanvas.getContext("2d") as CanvasRenderingContext2D;
 
         
-        let maskCanvas = document.getElementById("maskCanvas") as HTMLCanvasElement;
-        let maskContext = maskCanvas.getContext("2d") as CanvasRenderingContext2D;
+        this.numsMaskCanvas = document.getElementById("numsMaskCanvas") as HTMLCanvasElement;
+        this.numsMaskContext = this.numsMaskCanvas.getContext("2d") as CanvasRenderingContext2D;
 
-        
-        this.maskCanvas = maskCanvas;
-        this.maskContext = maskContext;
 
         
     }
@@ -70,10 +71,12 @@ export class CanvasDrawer{
 
         this.numsCanvas.width = width;
         this.numsCanvas.height = height;
+        this.numsMaskCanvas.width = width;
+        this.numsMaskCanvas.height = height;
         this.linesCanvas.width = width;
         this.linesCanvas.height = height;
-        this.maskCanvas.width = width;
-        this.maskCanvas.height = height;
+        this.linesMaskCanvas.width = width;
+        this.linesMaskCanvas.height = height;
 
 
         //数字の初期描画
@@ -86,9 +89,9 @@ export class CanvasDrawer{
             this.numPosDict.set(num.getId(), [centerX, centerY]);
 
             let numPath:Path2D = new Path2D();
-            this.numPathDict.set(num.getId(),numPath);
             numPath.arc(centerX, centerY, this.gridSize/3, 0,Math.PI * 2);
             numPath.closePath();
+            this.numPathDict.set(num.getId(),numPath);
 
             //初期描画は背後の線を覆うために円内を塗りつぶす
             this.numsContext.fillStyle="white"
@@ -98,8 +101,8 @@ export class CanvasDrawer{
 
             if(num.getOriginalNumber()>0){
                 this.numsContext.fillStyle="black"
-                this.numsContext.font=this.fontSize;
-                this.numsContext.fillText(String(num.getOriginalNumber()),centerX, centerY, this.gridSize);
+                this.numsContext.font=this.fontSize+ " Meiryo";
+                this.numsContext.fillText(String(num.getOriginalNumber()),centerX -this.gridSize/5, centerY + this.gridSize/5);
             }
         });
     }
@@ -208,8 +211,8 @@ export class CanvasDrawer{
             if(masked){
                 this.resultMaskMap.set(i,resultPathMask);
 
-                this.maskContext.fillStyle = this.bgColor;
-                this.maskContext.fill(resultPathMask);
+                this.linesMaskContext.fillStyle = this.bgColor;
+                this.linesMaskContext.fill(resultPathMask);
                 
                 this.linesContext.strokeStyle = this.lineColor;
                 this.linesContext.stroke(resultPath);
@@ -222,14 +225,40 @@ export class CanvasDrawer{
 
     }
 
+    public drawSteps(step:number):void{
+        this.clearLines();
+        this.linesContext.lineWidth = this.lineWidth;
+        this.linesContext.strokeStyle = this.lineColor;
+        this.linesMaskContext.fillStyle = this.bgColor;
+        for(let i:number=0; i<step; i++){
+            this.linesContext.stroke(this.resultPathArr[i]);
+            if(this.resultMaskMap.has(i)){
+                this.linesMaskContext.fill((this.resultMaskMap.get(i) as Path2D));
+            }
+        }
+        this.linesContext.strokeStyle = this.tgtColor;
+        this.linesContext.stroke(this.resultPathArr[step]);
+        let targetNumId:number = this.resultLogArr[step].getNumIdCheck();
+        this.numsMaskContext.fillStyle = this.tgtFillColor;
+        this.numsMaskContext.globalAlpha=0.2;
+        this.numsMaskContext.fill(this.numPathDict.get(targetNumId) as Path2D);
+        this.numsMaskContext.globalAlpha=1;
+        if(this.resultMaskMap.has(step)){
+            this.linesMaskContext.fillStyle = this.bgColor;
+            this.linesMaskContext.fill((this.resultMaskMap.get(step) as Path2D));
+        }
+    }
+
     public clearAll():void{
         this.numsContext.clearRect(0,0,this.numsCanvas.width,this.numsCanvas.height);
+        this.numsMaskContext.clearRect(0,0,this.numsMaskCanvas.width,this.numsMaskCanvas.height);
         this.linesContext.clearRect(0,0,this.linesCanvas.width,this.linesCanvas.height);
-        this.maskContext.clearRect(0,0,this.maskCanvas.width,this.maskCanvas.height);
+        this.linesMaskContext.clearRect(0,0,this.linesMaskCanvas.width,this.linesMaskCanvas.height);
     }
 
     public clearLines():void{
         this.linesContext.clearRect(0,0,this.linesCanvas.width,this.linesCanvas.height);
-        this.maskContext.clearRect(0,0,this.maskCanvas.width,this.maskCanvas.height);
+        this.linesMaskContext.clearRect(0,0,this.linesMaskCanvas.width,this.linesMaskCanvas.height);
+        this.numsMaskContext.clearRect(0,0,this.numsMaskCanvas.width,this.numsMaskCanvas.height);
     }
 }
