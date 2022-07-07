@@ -1,27 +1,29 @@
 export class ResultLog{
-    private numIdCheck:number;
-    private numIdTarget:number;
-    private result4way:number[]
-    private resultCode:string;
-    constructor(numIdCheck:number,numIdTarget:number,result4way:number[],resultCode:string){
+    private readonly numIdCheck:number[];
+    private readonly numIdTarget:number[];
+    private readonly result4wayList:number[][]
+    private readonly resultCode:string;
+    private readonly tryLog:ResultLog[];
+    constructor(numIdCheck:number[],numIdTarget:number[],result4wayList:number[][],resultCode:string,tryLog?:ResultLog[]){
         this.numIdCheck = numIdCheck;
         this.numIdTarget =numIdTarget;
-        this.result4way = result4way;
+        this.result4wayList = result4wayList;
         this.resultCode = resultCode;
+        typeof tryLog !== "undefined"? this.tryLog = tryLog: this.tryLog=[];
     }
 
-    public getNumIdCheck(){
+    public getCheckedNumIdList(){
         return this.numIdCheck;
     }
 
     
-    public getNumIdTarget(){
+    public getTargetNumIdList(){
         return this.numIdTarget;
     }
 
     
-    public getResult4way(){
-        return this.result4way;
+    public getResult4wayList(){
+        return this.result4wayList;
     }
 
     
@@ -29,7 +31,12 @@ export class ResultLog{
         return this.resultCode;
     }
 
-    public consoleLog(){
-        console.log("id= " + this.numIdTarget +" 4way= [" + this.result4way +"] resultCode= " +this.resultCode);
+    public getTryLog(){
+        return this.tryLog;
     }
+
+    public consoleLog(){
+        console.log("id= " + this.numIdTarget +" 4way= [" + this.result4wayList +"] resultCode= " +this.resultCode);
+    }
+
 }

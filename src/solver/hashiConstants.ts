@@ -1,4 +1,5 @@
 export class hashiConstants{
+    public static readonly all0Result:number[]=[0,0,0,0];
     public static readonly defaultResultArr:number[][][] = [[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]],[[-1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,-1]]];
     public static readonly alreadyCheckedResult:[[number[],string],number]=[[[0,0,0,0],"001"],8];
     public static readonly numRemain0Result:[[number[],string],number]=[[[0,0,0,0],"002"],0];
@@ -60,7 +61,9 @@ export class hashiConstants{
         ['901','破綻（本数不正）'],
         ['902','破綻（孤立）-引き未完了'],
         ['903','破綻（孤立）-引き終了'],
-        ['910','合計本数不正'],
+        ['912','破綻（孤立）-残り本数1手筋'],
+        ['922','破綻（孤立）-残り本数2手筋'],
+        ['990','合計本数不正'],
     ]);
 
 }

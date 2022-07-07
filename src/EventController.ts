@@ -160,21 +160,23 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         hashiCntl.getResultLog().forEach((log, i)=>{
             let li:HTMLElement = document.createElement("li");
             li.id="step" + String(i);
-            li.addEventListener("click",(ev)=>displayStep(i));
+            li.addEventListener("click",(ev)=>displayStep(i,true));
             li.classList.add("step");
             li.appendChild(document.createTextNode(("00000000" + String(i+1)).slice(-stepLength) + ": " +log.getResultCode()));
             stepListElement.appendChild(li);
         });
     }
 
-    function displayStep(step:number):void{
+    function displayStep(step:number,clickFlg:boolean):void{
         if(currentTargetLi !==undefined){
             currentTargetLi.classList.remove("targetStep");
         }
         let stepLi:HTMLElement = document.getElementById("step" + String(step)) as HTMLElement;
         stepLi.classList.add("targetStep");
         let positionCount:number = step-5;
-        stepListElement.scrollTo(0,positionCount*20);
+        if(!clickFlg){
+            stepListElement.scrollTo(0,positionCount*20);
+        }
         drawer.drawSteps(step);
         currentTargetLi = stepLi;
         currentTargetStepId = step;
@@ -184,14 +186,14 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         if(solvedFlg){
             if(keyEvent.key==="w"){ //↑
                 if(currentTargetStepId > 0){
-                    displayStep(currentTargetStepId - 1);
+                    displayStep(currentTargetStepId - 1,false);
                 }
                 
             }else if(keyEvent.key==="s"){ //↓
                 if(currentTargetStepId === -1){
-                    displayStep(0)
+                    displayStep(0,false)
                 }else if(currentTargetStepId < maxStepId){
-                    displayStep(currentTargetStepId + 1);
+                    displayStep(currentTargetStepId + 1,false);
                 }
                 
             }

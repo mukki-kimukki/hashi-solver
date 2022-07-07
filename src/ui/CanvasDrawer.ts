@@ -23,6 +23,8 @@ export class CanvasDrawer{
     private lineColor:string="black";
     private tgtColor:string="red";
     private tgtFillColor:string="red";
+    private checkColor:string="rgb(30,200,200)";
+    private checkFillColor:string="rgb(30,200,200)";
     
     private boardSize:number[] = [];
     private numDict:Num[][] =[[]];
@@ -109,7 +111,7 @@ export class CanvasDrawer{
 
     public drawAllResult(hashiCntl:HashiController):void{
         this.resultLogArr = hashiCntl.getResultLog();
-        let rootNumId:number;
+        let rootNumIdList:number[];
         let rootNum:Num;
         let rootPos:number[];
         let lineToPos:number[];
@@ -121,90 +123,95 @@ export class CanvasDrawer{
         }
         //確定段階毎に描画内容を分けて作成
         this.resultLogArr.forEach((result,i)=>{
-            rootNumId = result.getNumIdTarget();
-            rootNum = this.numDict[0][rootNumId];
-            rootPos = this.numPosDict.get(rootNumId) as number[];
+            const rootNumIdList:number[] = result.getTargetNumIdList();
+            let rootNumId:number;
             let resultPath:Path2D = new Path2D;
             let resultPathMask:Path2D = new Path2D;
             let masked:boolean = false;
-            result.getResult4way().forEach((val,dir)=>{
-                if(val>0){
-                    //線記入
-                    lineToPos =  this.numPosDict.get(rootNum.getSurNumId()[dir]) as number[];
-                    let logNumId:number; 
-                    let logDir:number;
-                    //線の引き方向を右か下にそろえた時の根元と方向
-                    if(dir>1){
-                        logNumId = rootNumId;
-                        logDir = dir;
-                    }else{
-                        logNumId = rootNum.getSurNumId()[dir];
-                        logDir = dir + 2;
-                    }
-                    
-                    //線記入済みチェック
-                    if(pathLog[logNumId][logDir] || val===2){
-                        //1本目引き済みまたは2本同時引き
-                        if(rootPos[0]===lineToPos[0]){
-                            resultPath.rect(rootPos[0] - this.lineSpacing/2, Math.min(rootPos[1],lineToPos[1]), this.lineSpacing, Math.abs(rootPos[1] - lineToPos[1]));
+            result.getResult4wayList().forEach((result4way,i)=>{
+                rootNumId =rootNumIdList[i];
+                rootNum = this.numDict[0][rootNumId];
+                rootPos = this.numPosDict.get(rootNumId) as number[];
+                result4way.forEach((val,dir)=>{
+                    if(val>0){
+                        //線記入
+                        lineToPos =  this.numPosDict.get(rootNum.getSurNumId()[dir]) as number[];
+                        let logNumId:number; 
+                        let logDir:number;
+                        //線の引き方向を右か下にそろえた時の根元と方向
+                        if(dir>1){
+                            logNumId = rootNumId;
+                            logDir = dir;
                         }else{
-                            resultPath.rect(Math.min(rootPos[0],lineToPos[0]), rootPos[1] - this.lineSpacing/2, Math.abs(rootPos[0] - lineToPos[0]), this.lineSpacing);
+                            logNumId = rootNum.getSurNumId()[dir];
+                            logDir = dir + 2;
                         }
-
-                        if(val!==2){
-                            
+                        
+                        //線記入済みチェック
+                        if(pathLog[logNumId][logDir] || val===2){
+                            //1本目引き済みまたは2本同時引き
                             if(rootPos[0]===lineToPos[0]){
-                                resultPathMask.rect(rootPos[0] - (this.lineSpacing - this.lineWidth)/2, Math.min(rootPos[1],lineToPos[1]), this.lineSpacing -this.lineWidth, Math.abs(rootPos[1] - lineToPos[1]));
+                                resultPath.rect(rootPos[0] - this.lineSpacing/2, Math.min(rootPos[1],lineToPos[1]), this.lineSpacing, Math.abs(rootPos[1] - lineToPos[1]));
                             }else{
-                                resultPathMask.rect(Math.min(rootPos[0],lineToPos[0]), rootPos[1] - (this.lineSpacing - this.lineWidth)/2, Math.abs(rootPos[0] - lineToPos[0]), this.lineSpacing - this.lineWidth);
+                                resultPath.rect(Math.min(rootPos[0],lineToPos[0]), rootPos[1] - this.lineSpacing/2, Math.abs(rootPos[0] - lineToPos[0]), this.lineSpacing);
                             }
     
-                            masked=true;
+                            if(val!==2){
+                                
+                                if(rootPos[0]===lineToPos[0]){
+                                    resultPathMask.rect(rootPos[0] - (this.lineSpacing - this.lineWidth)/2, Math.min(rootPos[1],lineToPos[1]), this.lineSpacing -this.lineWidth, Math.abs(rootPos[1] - lineToPos[1]));
+                                }else{
+                                    resultPathMask.rect(Math.min(rootPos[0],lineToPos[0]), rootPos[1] - (this.lineSpacing - this.lineWidth)/2, Math.abs(rootPos[0] - lineToPos[0]), this.lineSpacing - this.lineWidth);
+                                }
+        
+                                masked=true;
+                            }
+    
+                        }else{
+                            //1本目未
+                            resultPath.moveTo(rootPos[0], rootPos[1]);
+                            resultPath.lineTo(lineToPos[0],lineToPos[1]);
+                            pathLog[logNumId][logDir]=true;
                         }
-
-                    }else{
-                        //1本目未
-                        resultPath.moveTo(rootPos[0], rootPos[1]);
-                        resultPath.lineTo(lineToPos[0],lineToPos[1]);
-                        pathLog[logNumId][logDir]=true;
+    
+    
+                    }else if(val<0){
+                        //×記入
+                        //×の記入地点への数字中心からのずれ
+                        let diff:number = this.gridSize/2;
+                        switch(dir){
+                            case 0:
+                                xPosAdd = -diff;
+                                yPosAdd = 0;
+                                break;
+                            case 1:
+                                xPosAdd = 0;
+                                yPosAdd = -diff;
+                                break;
+                            case 2:
+                                xPosAdd = diff;
+                                yPosAdd = 0;
+                                break;
+                            case 3:
+                                xPosAdd = 0;
+                                yPosAdd = diff;
+                                break;
+                            default:
+                                //発生しない
+                                break;
+                        }
+                        //×のサイズ
+                        let diff2:number=this.gridSize/6
+                        //左下→右上線
+                        resultPath.moveTo(rootPos[0] + xPosAdd - diff2, rootPos[1] + yPosAdd - diff2);
+                        resultPath.lineTo(rootPos[0] + xPosAdd + diff2, rootPos[1] + yPosAdd + diff2);
+                        //左上→右下線
+                        resultPath.moveTo(rootPos[0] + xPosAdd - diff2, rootPos[1] + yPosAdd + diff2);
+                        resultPath.lineTo(rootPos[0] + xPosAdd + diff2, rootPos[1] + yPosAdd - diff2);
                     }
-
-
-                }else if(val<0){
-                    //×記入
-                    //×の記入地点への数字中心からのずれ
-                    let diff:number = this.gridSize/2;
-                    switch(dir){
-                        case 0:
-                            xPosAdd = -diff;
-                            yPosAdd = 0;
-                            break;
-                        case 1:
-                            xPosAdd = 0;
-                            yPosAdd = -diff;
-                            break;
-                        case 2:
-                            xPosAdd = diff;
-                            yPosAdd = 0;
-                            break;
-                        case 3:
-                            xPosAdd = 0;
-                            yPosAdd = diff;
-                            break;
-                        default:
-                            //発生しない
-                            break;
-                    }
-                    //×のサイズ
-                    let diff2:number=this.gridSize/6
-                    //左下→右上線
-                    resultPath.moveTo(rootPos[0] + xPosAdd - diff2, rootPos[1] + yPosAdd - diff2);
-                    resultPath.lineTo(rootPos[0] + xPosAdd + diff2, rootPos[1] + yPosAdd + diff2);
-                    //左上→右下線
-                    resultPath.moveTo(rootPos[0] + xPosAdd - diff2, rootPos[1] + yPosAdd + diff2);
-                    resultPath.lineTo(rootPos[0] + xPosAdd + diff2, rootPos[1] + yPosAdd - diff2);
-                }
+                });
             });
+            
 
             this.resultPathArr.push(resultPath);
 
@@ -238,10 +245,27 @@ export class CanvasDrawer{
         }
         this.linesContext.strokeStyle = this.tgtColor;
         this.linesContext.stroke(this.resultPathArr[step]);
-        let targetNumId:number = this.resultLogArr[step].getNumIdCheck();
-        this.numsMaskContext.fillStyle = this.tgtFillColor;
+        let checkNumIdList:number[] = this.resultLogArr[step].getCheckedNumIdList().concat();
+        let targetNumIdList:number[] = this.resultLogArr[step].getTargetNumIdList().concat();
+        //ターゲットがチェックリストに含まれる場合、チェックリストの描画対象からターゲットを外す
+        targetNumIdList.forEach(id=>{
+            let targetIndexInCheckList:number = checkNumIdList.indexOf(id);
+            if(targetIndexInCheckList >= 0){
+                checkNumIdList.splice(targetIndexInCheckList,1);
+            }
+        });
         this.numsMaskContext.globalAlpha=0.2;
-        this.numsMaskContext.fill(this.numPathDict.get(targetNumId) as Path2D);
+
+        this.numsMaskContext.fillStyle = this.checkFillColor;
+        checkNumIdList.forEach((checkNumId)=>{
+            this.numsMaskContext.fill(this.numPathDict.get(checkNumId) as Path2D);
+        });
+        
+        this.numsMaskContext.fillStyle = this.tgtFillColor;
+        targetNumIdList.forEach((targetNumId)=>{
+            this.numsMaskContext.fill(this.numPathDict.get(targetNumId) as Path2D);
+        });
+
         this.numsMaskContext.globalAlpha=1;
         if(this.resultMaskMap.has(step)){
             this.linesMaskContext.fillStyle = this.bgColor;
