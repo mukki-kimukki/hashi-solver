@@ -3,33 +3,33 @@ import { HashiController } from "./solver/HashiController";
 import { CanvasDrawer } from "./ui/CanvasDrawer";
 
 
-    var bodyElement:HTMLBodyElement = document.getElementById("body") as HTMLBodyElement;
+    const bodyElement:HTMLBodyElement = document.getElementById("body") as HTMLBodyElement;
 
-    var autoImport:HTMLInputElement = document.getElementById("autoImport") as HTMLInputElement;
+    const autoImport:HTMLInputElement = document.getElementById("autoImport") as HTMLInputElement;
     let autoImportFlg:boolean =  autoImport.checked;
-    var tempUrlIn:string = "";
-    var tempUrlOut:string = "";
-    var tempDepthIn:string = "";
-    var tempDepthOut:string = "";
-    var importButton:HTMLButtonElement = document.getElementById("importButton") as HTMLButtonElement;
+    let tempUrlIn:string = "";
+    let tempUrlOut:string = "";
+    let tempDepthIn:string = "";
+    let tempDepthOut:string = "";
+    const importButton:HTMLButtonElement = document.getElementById("importButton") as HTMLButtonElement;
 
-    var autoSolve:HTMLInputElement = document.getElementById("autoSolve") as HTMLInputElement;
+    const autoSolve:HTMLInputElement = document.getElementById("autoSolve") as HTMLInputElement;
     let autoSolveFlg:boolean =  autoSolve.checked;
-    var solveButton:HTMLButtonElement = document.getElementById("solveButton") as HTMLButtonElement;
+    const solveButton:HTMLButtonElement = document.getElementById("solveButton") as HTMLButtonElement;
 
-    var urlElement:HTMLInputElement = document.getElementById("url") as HTMLInputElement;
-    var solveDepthElement:HTMLInputElement = document.getElementById("solveDepth") as HTMLInputElement
+    const urlElement:HTMLInputElement = document.getElementById("url") as HTMLInputElement;
+    const solveDepthElement:HTMLInputElement = document.getElementById("solveDepth") as HTMLInputElement
 
     
-    var stepListElement:HTMLElement = document.getElementById("stepList") as HTMLElement;
-    var currentTargetLi:HTMLElement;
-    var currentTargetStepId:number = -1;
-    var maxStepId:number=0;
+    const stepListElement:HTMLElement = document.getElementById("stepList") as HTMLElement;
+    let currentTargetLi:HTMLElement;
+    let currentTargetStepId:number = -1;
+    let maxStepId:number=0;
     
-    var hashiCntl:HashiController = new HashiController();
-    var solvedFlg:boolean =false;
-    var gridSize:number = 30;
-    var drawer = new CanvasDrawer(gridSize);
+    let hashiCntl:HashiController = new HashiController();
+    let solvedFlg:boolean =false;
+    const gridSize:number = 30;
+    let drawer = new CanvasDrawer(gridSize);
 
     bodyElement.onload = function initialDisplay(){
         autoImport.checked = true;
@@ -104,7 +104,7 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
     }
 
     function importUrl():void{
-        let url:string = urlElement.value;
+        const url:string = urlElement.value;
         //url文字列チェックに引っ掛かったら中断
         if(!checkUrl(url)){
             return
@@ -135,7 +135,7 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
     }
 
     function solve():void{
-        let depthStr:string = solveDepthElement.value;
+        const depthStr:string = solveDepthElement.value;
         let depth:number;
         if(depthStr.length===0){
             depth = 4;
@@ -158,7 +158,7 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         maxStepId = hashiCntl.getResultLog().length -1;
         let stepLength:number = String(maxStepId).length;
         hashiCntl.getResultLog().forEach((log, i)=>{
-            let li:HTMLElement = document.createElement("li");
+            const li:HTMLElement = document.createElement("li");
             li.id="step" + String(i);
             li.addEventListener("click",(ev)=>displayStep(i,true));
             li.classList.add("step");
@@ -171,9 +171,9 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         if(currentTargetLi !==undefined){
             currentTargetLi.classList.remove("targetStep");
         }
-        let stepLi:HTMLElement = document.getElementById("step" + String(step)) as HTMLElement;
+        const stepLi:HTMLElement = document.getElementById("step" + String(step)) as HTMLElement;
         stepLi.classList.add("targetStep");
-        let positionCount:number = step-5;
+        const positionCount:number = step-5;
         if(!clickFlg){
             stepListElement.scrollTo(0,positionCount*20);
         }

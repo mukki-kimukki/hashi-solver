@@ -2,6 +2,9 @@ import { Num } from "../solver/Num";
 
 function remainOf(p:number):number{
     switch(p){
+        case -1:
+            //線引き行き止まり0
+            return 0;
         case 0:
             //not行き止まり0
             return 0;
@@ -29,49 +32,54 @@ function remainOf(p:number):number{
     }
 }
 
-function drawFlgP(p:number):boolean{
+function drawCountP(p:number):number{
     switch(p){
+        case -1:
+            //線引き行き止まり0
+            //m=1;
+            //num.drawFrom(dir,1);
+            return 1;
         case 0:
             //not行き止まり0
             //m=3;
-            //num.setRemain1way(dir,0);
-            return false;
+            //num.drawFrom(dir,2);
+            return 2;
         case 1:
             //行き止まり0
             //m=0;
             //何もしない
-            return false;
+            return 0;
         case 2:
             //not行き止まり腕なし1
             //m=3;
             //num.setRemain1way(dir,1);
-            return false;
+            return 0;
         case 3:
             //not行き止まり腕あり1
             //m=3;
             //num.drawFrom(dir,1);
             //num.setRemain1way(dir,0);
-            return true;
+            return 1;
         case 4:
             //行き止まり腕なし1
             //m=1;
             //何もしない
-            return false;
+            return 0;
         case 5:
             //行き止まり腕あり1
             //m=2;
             //num.drawFrom(dir,1);
-            return true;
+            return 1;
         case 6:
             //not行き止まり2
             //m=3;
             //何もしない
-            return false;
+            return 0;
         default: //case7;
             //行き止まり2
             //m=2;
             //何もしない
-            return false;
+            return 0;
     }
 }
 
@@ -98,6 +106,10 @@ function initMap(dir:number,p:number,numMap:number[][]):void{
     }
     let m:number;
     switch(p){
+        case -1:
+            //線引き行き止まり0
+            m=1;
+            break;
         case 0:
             //not行き止まり0
             m=3;
@@ -136,10 +148,15 @@ function initMap(dir:number,p:number,numMap:number[][]):void{
 
 function initDir(dir:number,p:number,num:Num):void{
     switch(p){
+        case -1:
+            //線引き行き止まり0
+            //m=1;
+            num.drawFrom(dir,1);
+            break;
         case 0:
             //not行き止まり0
             //m=3;
-            num.setRemain1way(dir,0);
+            num.drawFrom(dir,2);
             break;
         case 1:
             //行き止まり0
@@ -180,7 +197,7 @@ function initDir(dir:number,p:number,num:Num):void{
     }
 }
 
-function initNum(n:number,p0:number,p1:number,p2:number,p3:number,numMap:number[][]):Num{
+function initNum(p0:number,p1:number,p2:number,p3:number,numMap:number[][]):Num{
     const num = new Num(0,2,2,numMap,numMap,0);
     initDir(0,p0,num);
     initDir(1,p1,num);
@@ -192,10 +209,15 @@ function initNum(n:number,p0:number,p1:number,p2:number,p3:number,numMap:number[
 
 function checkEnd(p:number,hon:number):boolean{
     switch(p){
+        case -1:
+            //線引き行き止まり0
+                //m=1;
+                    //num.drawFrom(dir,1);
+            return true;
         case 0:
             //not行き止まり0
                 //m=3;
-                    //num.setRemain1way(dir,0);
+                    //num.drawFrom(dir,2);
             return false;
         case 1:
             //行き止まり0
@@ -240,7 +262,24 @@ function expectResult(num:Num,p0:number,p1:number,p2:number,p3:number):[number[]
     let list:number[][]=[];
     const remain4way:number[] = num.getRemain4way();
     const n:number=num.getRemainSelf();
-    const max0:number = Math.min(n,remain4way[0])
+    const max0:number = Math.min(n,remain4way[0]);
+    /*不要
+    //腕なし行き止まりでいずれにせよ孤立破綻するパターン
+    let pCount3:number=0;
+    let pCount1:number=0;
+    [p0,p1,p2,p3].forEach(p=>{
+        if(p===1){
+            pCount1+=1;
+        }else if(p===3){
+            pCount3+=1;
+        }
+    });
+
+    if(n<pCount3 && pCount3>1 && (pCount1+pCount3)===4){
+        return [[0,0,0,0],"9"]
+    }
+    */
+    //通常手筋パターン
     for(let hon0:number=0;hon0 <= max0;hon0++){
         const tempResult0:number[] = [hon0,0,0,0];
         const remain0 = n-hon0;
@@ -260,7 +299,7 @@ function expectResult(num:Num,p0:number,p1:number,p2:number,p3:number):[number[]
                 const endFlg2 = endFlg1 && checkEnd(p2,hon2);
                 const endFlg3 = endFlg2 && checkEnd(p3,hon3);
                 if(endFlg3){
-                    if(hon0===remain4way[0] && hon1===remain4way[1] && hon2===remain4way[2] && hon3===remain4way[3]){
+                    if(hon0===remain4way[0] && hon1===remain4way[1] && hon2===remain4way[2] && hon3===remain4way[3] && hon3 <= remain4way[3]){
                         list.push(tempResult2);
                     }
                 }else{
@@ -272,9 +311,15 @@ function expectResult(num:Num,p0:number,p1:number,p2:number,p3:number):[number[]
         }
     }
     //破綻チェック
-    if(list.length==0){
-        return [[0,0,0,0],"9"];
+    if(list.length === 0){
+        if(n === 0){
+            //全確定済みを再チェックしていた場合
+            return [[0,0,0,0],"0"]
+        }else{
+            return [[0,0,0,0],"9"];
+        }
     }else{
+        //共通して引かれる本数（1以上）
         const result = list.reduce((prev,cur)=>{
             let next:number[] = prev.concat();
             next[0] = Math.min(prev[0],cur[0]);
@@ -283,7 +328,8 @@ function expectResult(num:Num,p0:number,p1:number,p2:number,p3:number):[number[]
             next[3] = Math.min(prev[3],cur[3]);
             return next;
         },list[0]);
-        if(result.findIndex(hon=>hon>0)>=0){
+
+        if(result.findIndex(hon=>hon!==0)>=0){
             return [result,"1"];
         }else{
             return [result,"0"];
@@ -299,18 +345,18 @@ function testNum(n:number,p0:number,p1:number,p2:number,p3:number):number{
     initMap(2,p2,numMap);
     initMap(3,p3,numMap);
     numMap[2][2]=n;
-    const num = initNum(n,p0,p1,p2,p3,numMap);
+    const num = initNum(p0,p1,p2,p3,numMap);
     const actual:[number[],string] = num.checkLogics(false)[0];
     const expect:[number[],string] = expectResult(num,p0,p1,p2,p3);
     if(actual[1].charAt(0) !== expect[1].charAt(0)){
-        const remain:number = n - Number(drawFlgP(p0)) - Number(drawFlgP(p1)) - Number(drawFlgP(p2)) - Number(drawFlgP(p3));
+        const remain:number = n - drawCountP(p0) - drawCountP(p1) - drawCountP(p2) - drawCountP(p3);
         console.log("at n = " + remain + " p0p1p2p3 =" + String(p0)+String(p1)+String(p2)+String(p3));
         console.log(" expected " + expect);
         console.log(" actualy  " + actual);
         console.log("-------------------------");
         return 1;
-    }else if(actual[0].reduce((prev,cur,i,exp = expect[0])=>Number(prev == 1 || cur != exp[i]),0)){
-        const remain:number = n - Number(drawFlgP(p0)) - Number(drawFlgP(p1)) - Number(drawFlgP(p2)) - Number(drawFlgP(p3));
+    }else if(actual[0].reduce((prev,cur,i,exp = expect[0])=>Number(prev === 1 || cur !== exp[i]),0)){
+        const remain:number = n - drawCountP(p0) - drawCountP(p1) - drawCountP(p2) - drawCountP(p3);
         console.log("at n = " + remain + " p0p1p2p3 =" + String(p0)+String(p1)+String(p2)+String(p3));
         console.log(" expected " + expect);
         console.log(" actualy  " + actual);
@@ -323,9 +369,10 @@ function testNum(n:number,p0:number,p1:number,p2:number,p3:number):number{
 
 function checkDrawCount(n:number,p0:number,p1:number,p2:number,p3:number):boolean{
     //線を引く準備が必要な場合
-    if(drawFlgP(p0)||drawFlgP(p1)||drawFlgP(p2)||drawFlgP(p3)){
+    const drawCountSum:number = drawCountP(p0) + drawCountP(p1) + drawCountP(p2) + drawCountP(p3);
+    if(drawCountSum > 0){
         //線を引く準備が不可能であればfalse
-        return (n > remainOf(p0) + remainOf(p1) + remainOf(p2) + remainOf(p3));
+        return (n - drawCountSum) >= 0 && n > (remainOf(p0) + remainOf(p1) + remainOf(p2) + remainOf(p3));
     }else{
         return true;
     }
@@ -336,10 +383,10 @@ let errorCount:number = 0;
 //ヒント数字場合分けループ
 for(let n=1;n<9;n++){
     //方向毎の情報設定ループ
-    for(let p0=0;p0<8;p0++){
-        for(let p1=0;p1<8;p1++){
-            for(let p2=0;p2<8;p2++){
-                for(let p3=0;p3<8;p3++){
+    for(let p0=-1;p0<8;p0++){
+        for(let p1=-1;p1<8;p1++){
+            for(let p2=-1;p2<8;p2++){
+                for(let p3=-1;p3<8;p3++){
                     //そもそも準備が不可能なパターンは実施しない
                         if(checkDrawCount(n,p0,p1,p2,p3)){
                             errorCount += testNum(n,p0,p1,p2,p3);
@@ -349,3 +396,4 @@ for(let n=1;n<9;n++){
             }
         }
     }
+console.log("error count = " + errorCount);
