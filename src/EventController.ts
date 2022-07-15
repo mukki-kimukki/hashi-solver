@@ -26,7 +26,7 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
     let currentTargetStepId:number = -1;
     let maxStepId:number=0;
     
-    let hashiCntl:HashiController = new HashiController();
+    let hashiCtrl:HashiController = new HashiController();
     let solvedFlg:boolean =false;
     const gridSize:number = 30;
     let drawer = new CanvasDrawer(gridSize);
@@ -69,7 +69,7 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         }
     });
 
-    urlElement.addEventListener('keypress',(keyEvent)=>{
+    urlElement.addEventListener('keydown',(keyEvent)=>{
         if(keyEvent.key==="Enter"){
             solveDepthElement.focus();
         }
@@ -87,7 +87,7 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         }
     });
 
-    solveDepthElement.addEventListener('keypress',(keyEvent)=>{
+    solveDepthElement.addEventListener('keydown',(keyEvent)=>{
         if(keyEvent.key==="enter"){
             stepListElement.focus();
         }
@@ -110,10 +110,10 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
             return
         }
         solvedFlg = false;
-        hashiCntl = new HashiController(url);
+        hashiCtrl = new HashiController(url);
         drawer.clearAll();
         drawer = new CanvasDrawer(gridSize);
-        drawer.drawNums(hashiCntl);
+        drawer.drawNums(hashiCtrl);
 
 
         if(autoSolveFlg){
@@ -142,10 +142,10 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         }else{
             depth = Number(depthStr);
         }
-        hashiCntl.solve(depth);
+        hashiCtrl.solve(depth);
         solvedFlg=true;
         drawer.clearLines();
-        drawer.drawAllResult(hashiCntl);
+        drawer.drawAllResult(hashiCtrl);
         displayStepList();
     }
 
@@ -153,11 +153,11 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         while(stepListElement.firstChild !== null){
             stepListElement.removeChild(stepListElement.firstChild);
         }
-        stepListElement.style.height=String(gridSize*hashiCntl.getBoardSize()[0]+"px");
+        stepListElement.style.height=String(gridSize*hashiCtrl.getBoardSize()[0]+"px");
         currentTargetStepId = -1;
-        maxStepId = hashiCntl.getResultLog().length -1;
+        maxStepId = hashiCtrl.getResultLog().length -1;
         let stepLength:number = String(maxStepId).length;
-        hashiCntl.getResultLog().forEach((log, i)=>{
+        hashiCtrl.getResultLog().forEach((log, i)=>{
             const li:HTMLElement = document.createElement("li");
             li.id="step" + String(i);
             li.addEventListener("click",(ev)=>displayStep(i,true));

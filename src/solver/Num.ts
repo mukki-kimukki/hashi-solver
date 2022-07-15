@@ -1,12 +1,13 @@
-import { hashiConstants } from "./hashiConstants";
-
+import {HashiConstants as hc} from "./HashiConstants";
+import {HashiBaseConstants as hbc} from "./HashiBaseConstants";
 export class Num {
 
 	private id:number;
 	private originalNumber:number;
 	private depth:number;
 	private parentIslandId:number;
-	private address:[number,number];	//[y,x]
+	/** [y,x] */
+	private address:[y:number,x:number];
 	private surNumId:number[] = [-1,-1,-1,-1];
 
 
@@ -198,7 +199,8 @@ export class Num {
 		this.parentIslandId = id;
 	}
 
-	public getAddress():[number,number]{
+	/** [y,x] */
+	public getAddress():[y:number,x:number]{
 		return this.address;
 	}
 
@@ -314,7 +316,7 @@ export class Num {
 		this.remain4way[dir] -= hon;
 		this.remainSelf -= hon;
 		this.changeEndStatus(dir,hon);
-		if(fromRemain==0 && this.remain4way[dir]> 0){
+		if(fromRemain===0 && this.remain4way[dir]> 0){
 			this.setRemain1way(dir,0);
 		}
 		return this.remainSelf;
@@ -323,7 +325,7 @@ export class Num {
 	
 
 	private drawSelf(result:number[]):void{
-		this.remainSelf -= result.reduce((prev,cur) => prev + cur,0);
+		result.forEach(hon => this.remainSelf -= hon);
 		result.forEach((hon,dir) =>{
 			if(hon > 0){
 				this.hands4way[dir] += hon;
@@ -342,8 +344,8 @@ export class Num {
 				this.isEndSur[dir][2] = false;
 				this.isEndSur[dir][1] = true;
 			}else if(this.isEndSur[dir][1]){
-				this.isEndSur[dir][1] =false;
-				this.isEndSur[dir][0] =true;
+				this.isEndSur[dir][1] = false;
+				this.isEndSur[dir][0] = true;
 				//TODO ここで行き止まり通知を出せる
 			};
 		};
@@ -385,42 +387,35 @@ export class Num {
 	 */
 	public checkLogics(execFlg : boolean):[[number[],string],number]{
 		if(this.isLogicChecked){
-			return hashiConstants.alreadyCheckedResult;
+			return hc.defaultNumResults.checked;
 		}
 		let numberLogicResult:[number[],string];
 		let sumRemain4way:number = this.remain4way.reduce((prev,cur) =>prev + cur,0);
-		//this.minRemain4way = this.remain4way.reduce(function(prev,cur){return Math.min(prev,cur)});
-		let remain0count:number = 0;
-		for(let i:number = 0; i < 4 ;i++){
-			remain0count = remain0count + Number(this.remain4way[i] == 0);
-		}
-		let remain1count:number = 0;
-		for(let i:number = 0; i < 4 ;i++){
-			remain1count = remain1count + Number(this.remain4way[i] == 1);
-		}
-		let isEndSurCount:number[] =[0,0,0];
-		for(let arr of this.isEndSur){
-			isEndSurCount[0] += Number(arr[0]);
-			isEndSurCount[1] += Number(arr[1]);
-			isEndSurCount[2] += Number(arr[2]);
-		}
 		//if(this.id == 1){
 			// console.log("id = 1 sumRemain4way" + sumRemain4way + " remainSelf " + this.remainSelf);
 			// console.log(this.remain4way);
 		//}
 		if(sumRemain4way<this.remainSelf){	//周囲の残り本数が引く必要のある本数より少なければ破綻
-			return [[hashiConstants.all0Result,"901"],0];
+			return hc.defaultNumResults.lack;
 		}else if(sumRemain4way == this.remainSelf){
 			if(this.remainSelf == 0){
 				this.isLogicChecked=true;
-				return hashiConstants.numRemain0Result;
+				return hc.defaultNumResults.remain0;
 			}else{
 				numberLogicResult = [this.remain4way.concat(),"1X01"];	//全て腕を使い切るパターン
 			}
 		}else{
+			let remain0count:number = this.remain4way.reduce((prev,rem)=>prev + Number(rem==0),0);
+			let remain1count:number = this.remain4way.reduce((prev,rem)=>prev + Number(rem==1),0);
+			let isEndSurCount:number[] =[0,0,0];
+			for(let arr of this.isEndSur){
+				isEndSurCount[0] += Number(arr[0]);
+				isEndSurCount[1] += Number(arr[1]);
+				isEndSurCount[2] += Number(arr[2]);
+			}
 			switch (this.remainSelf) {
 				case 7:
-					numberLogicResult = this.logic7();
+					numberLogicResult = hc.defaultNumLogics.logic7;
 					break;
 				case 6:
 					numberLogicResult = this.logic6(remain1count,isEndSurCount);
@@ -441,11 +436,11 @@ export class Num {
 					numberLogicResult = this.logic1(remain0count,isEndSurCount);
 					break;
 				case 0:
-					numberLogicResult = [hashiConstants.all0Result,"0000"];
+					numberLogicResult = hc.defaultNumLogics.logic0;
 					break;
 
 				default:
-					return [[hashiConstants.all0Result,"999"],0];
+					throw new RangeError("予期せぬ残り本数");
 			}
 		}
 		if(numberLogicResult[1].charAt(0) == "0"){
@@ -480,67 +475,59 @@ export class Num {
 	 * @param
 	 * @return [線の引き先方向ごとの本数,結果コード]
 	 */
-	private logic7():[number[],string]{
-		return [[1,1,1,1],"1701"];
-	}
 	private logic6(remain1count:number,isEndSurCount:number[]):[number[],string]{
 		if(remain1count == 1){	//1隣接6
 			//行き止まり2が3方向、かつ、残り1の方向にまだ線を引いていない場合は追加で引ける
 			if(isEndSurCount[2] == 3 && this.hands4way[this.remain4way.findIndex((val)=>val==1)] == 0){
-				return [[1,1,1,1],"1631"];
+				return [hbc.default4way.all1,"1631"];
 			}else{
-				return [this.remain4way.map((val) => val-1),"1611"];
+				return [hbc.default4way.one0[this.hands4way.findIndex(val => val==0)],"1611"];
 			}
 		}else{
 			switch(isEndSurCount[2]){
 				case 4:
-					return [[1,1,1,1],"1622"];
+					return [hbc.default4way.all1,"1622"];
 				case 3:
-					return [this.isEndSur.map((val) => Number(!val[2])),"1621"];	//残り1方向が残り1本の可能性は排除済み
+					return [hbc.default4way.one0[this.isEndSur.findIndex(val => !val[2])],"1621"];	//残り1方向が残り1本の可能性は排除済み、0本は全消費パターンなので必ず残り2本
 				default:
-					return [hashiConstants.all0Result,"00061"];
+					return hc.defaultNumLogics.result000.rc00061;
 			}
 		}
 	}
 	private logic5(remain0count:number,remain1count:number,isEndSurCount:number[]):[number[],string]{
 		if(remain0count == 1){
-			return [this.remain4way.map((val) => Number(val != 0)),"1501"];	//壁5
+			return [hbc.default4way.one0[this.remain4way.findIndex(val => val != 0)],"1501"];	//壁5
 		}else{
 			switch(remain1count){
 				case 2:	//残り本数は6以上かつ残り1が2方向なので周囲の残り本数は1122で確定
 					if(isEndSurCount[2] == 2){
 						switch(isEndSurCount[1]){
 							case 1:
-								return [this.isEndSur.map((val) => Number(!val[1])),"1531"];
+								return [hbc.default4way.one0[this.isEndSur.findIndex(val => !val[1])],"1531"];
 							case 2:
-								return [[1,1,1,1],"1532"];
+								return [hbc.default4way.all1,"1532"];
 							default:
-								return [this.remain4way.map(val=>Number(val===2)),"1513"];
+								return [this.remain4way.map(val=>Number(val===2)),"15112"];
 						}
-					}else{	//奇数なので行き止まり1がないと孤立手筋は使えない
-						return [this.remain4way.map((val) => val-1),"1511"];	//壁なし＋1122で確定なのでremain4way-1で残り2の方向だけ1になる
+					}else{
+						return [this.remain4way.map((val) => val-1),"15111"];	//壁なし＋1122で確定なのでremain4way-1で残り2の方向だけ1になる
 					}
 				case 1:
 					if(isEndSurCount[1] == 1){
 						switch(isEndSurCount[2]){
 							case 2:
-								let tempResult = this.isEndSur.map((val, i) => Number(!val[1] && !val[2] && this.hands4way[i] == 0));
-								if(tempResult.findIndex((val) => val == 1) >= 0){
-									return [tempResult,"1521"];
-								}else{
-									return [hashiConstants.all0Result,"00052"];
-								}
+								return [hbc.default4way.plus1[this.isEndSur.findIndex(val => !val[1] && !val[2])],"1521"];
 							case 3:
-								return [this.isEndSur.map((val) => Number(val[2])),"1522"];
+								return [hbc.default4way.one0[this.isEndSur.findIndex(val => val[1])],"1522"];
 							default:
-								return [hashiConstants.all0Result,"00053"];
+								return hc.defaultNumLogics.result000.rc00051;
 						}
 
 					}else{
-						return [hashiConstants.all0Result,"00054"];
+						return hc.defaultNumLogics.result000.rc00052;
 					}
 				default:
-					return [hashiConstants.all0Result,"00055"];
+					return hc.defaultNumLogics.result000.rc00053;
 			}
 		}
 	}
@@ -548,7 +535,7 @@ export class Num {
 		if(remain0count === 1){
 			if(remain1count === 1){
 				if(isEndSurCount[2] === 2 && isEndSurCount[0] === 1 && this.hands4way.findIndex((hon,i) => hon > 0 && !this.isEndSur[i][0]) < 0){
-					return [this.remain4way.map((val) =>Number(val !== 0) ),"1431"];
+					return [hbc.default4way.one0[this.remain4way.findIndex(val =>val === 0)],"1431"];
 				}else{
 					return [this.remain4way.map((val) => Number(val ===2)),"1411"];
 				}
@@ -556,50 +543,48 @@ export class Num {
 				if(isEndSurCount[0] === 1){
 					switch(isEndSurCount[2]){
 						case 2:
-							let tempResult = this.isEndSur.map((val,i) => Number(!val[2] && !val[0] && (this.hands4way[i] === 0)));
+							let tempResult = this.isEndSur.map((val,i) => Number(!val[2] && !val[0] && this.hands4way[i] === 0));
 							if(tempResult.findIndex((val) => val === 1) >= 0){
 								return [tempResult,"1421"];
 							}else{
-								return [hashiConstants.all0Result,"00041"];
+								return hc.defaultNumLogics.result000.rc00041;
 							}
 						case 3:
-							return [this.isEndSur.map((val) => Number(val[2])),"1422"];
+							return [hbc.default4way.one0[this.isEndSur.findIndex(val => val[0])],"1422"];
 						default:
-							return [hashiConstants.all0Result,"00042"];
+							return hc.defaultNumLogics.result000.rc00042;
 					}
 				}else{
-					return [hashiConstants.all0Result,"00043"];
+					return hc.defaultNumLogics.result000.rc00043;
 				}
 			}
 		}else{
 			//remain0Count===2は使い切りなので発生しない
 			switch(remain1count){
 				case 3:
-					if(isEndSurCount[1]===3){
-						return [[1,1,1,1],"1432"];
+					if(isEndSurCount[1] === 3 && isEndSurCount[2] === 1 && this.hands4way.findIndex(hon=>hon>0) >= 0){
+						let tempResult = this.isEndSur.map((val,i) => Number(val[2] || this.hands4way[i] === 0));
+						return [tempResult,"1432"];
 					}else{
-						return [this.remain4way.map(val=>Number(val===2)),"1412"];
+						return [this.remain4way.map(val=>Number(val === 2)),"1412"];
 					}
 				case 2:
-					if(isEndSurCount[1] == 2){
+					if(isEndSurCount[1] === 2){
 						switch(isEndSurCount[2]){
 							case 2:
+								//行き止まり2両方
 								return [this.remain4way.map((val) => val-1),"1424"];	//4方向残りが1122なので1引くと2の方向になる
 							case 1:
-								let tempResult = this.isEndSur.map((val,i) => Number((!val[1] && !val[2]) && (this.hands4way[i] == 0)));
-								if(tempResult.findIndex((val) => val == 1) >= 0){
-									return [tempResult,"1423"];
-								}else{
-									return [hashiConstants.all0Result,"00044"];
-								}
+								//行き止まりではない2の方向
+								return [hbc.default4way.plus1[this.isEndSur.findIndex(val => !val[1] && !val[2])],"1423"];
 							default:
-								return [hashiConstants.all0Result,"00045"];
+								return hc.defaultNumLogics.result000.rc00044;
 						}
 					}else{
-						return [hashiConstants.all0Result,"00046"];
+						return hc.defaultNumLogics.result000.rc00045;
 					}
 				default:
-					return [hashiConstants.all0Result,"00047"];
+					return hc.defaultNumLogics.result000.rc00046;
 			}
 		}
 	}
@@ -610,7 +595,7 @@ export class Num {
 			case 1:
 				switch(remain1count){	//残り1の数で分岐
 					case 2:
-						if(isEndSurCount[2] === 1){
+						if(isEndSurCount[2] === 1 && isEndSurCount[0] === 1){
 							const dir1:number = this.remain4way.findIndex((rem)=>rem==1);
 							const dir2:number = this.remain4way.findIndex((rem,dir)=>rem==1 && dir !== dir1);
 							const dir1flg:boolean = this.isEndSur[dir2][1] && this.hands4way[dir1] == 0;
@@ -619,33 +604,35 @@ export class Num {
 							switch(count){
 								case 2:
 									//行き止まり0以外全方向
-									return [this.remain4way.map((val)=>Number(val !== 0)),"1332"];
+									return [hbc.default4way.one0[this.remain4way.findIndex(val=>val === 0)],"1332"];
 								case 1:
 									//2の方向＋手の引かれていない1の方向
 									return [this.remain4way.map((val,dir)=>Number(val === 2 || (dir === dir1 && dir1flg) || (dir === dir2 && dir2Flg))),"1331"];
 								default: //case 0
 									//2の方向のみ
-									return [this.remain4way.map((val)=>Number(val==2)),"13112"];
+									return [hbc.default4way.plus1[this.remain4way.findIndex(val=>val === 2)],"13112"];
 							}
 						}else{
 							//2の方向のみ
-							return [this.remain4way.map((val)=>Number(val==2)),"13111"];
+							return [hbc.default4way.plus1[this.remain4way.findIndex(val=>val === 2)],"13111"];
 						}
 					case 1:
 						if(isEndSurCount[0]==1 && isEndSurCount[1]==1){
 							switch(isEndSurCount[2]){
 								case 2:
+									//行き止まり2両方
 									return [this.remain4way.map((hon)=>Number(hon==2)),"1322"];
 								case 1:
-									return [this.remain4way.map((hon,dir)=>Number(hon==2 && !this.isEndSur[dir][2])),"1321"];
+									//行き止まりではない2の方向
+									return [hbc.default4way.plus1[this.remain4way.findIndex((hon,dir)=>hon === 2 && !this.isEndSur[dir][2])],"1321"];
 								default:
-									return [hashiConstants.all0Result,"00031"];
+									return hc.defaultNumLogics.result000.rc00031;
 							}
 						}else{
-							return [hashiConstants.all0Result,"00032"];
+							return hc.defaultNumLogics.result000.rc00032;
 						}
 					default:
-						return [hashiConstants.all0Result,"00033"];
+						return hc.defaultNumLogics.result000.rc00033;
 				}
 			default:
 				switch(isEndSurCount[1]){
@@ -657,7 +644,7 @@ export class Num {
 						});
 						switch(countNoHandsDir){
 							case 4:
-								return [hashiConstants.all0Result,"9321"];
+								return [hbc.default4way.all0,"9321"];
 							case 3:
 								return [tempResult,"1325"];
 							case 2:
@@ -665,17 +652,17 @@ export class Num {
 							case 1:
 								return [tempResult,"1324"];
 							default:
-								return [hashiConstants.all0Result,"00034"];
+								return hc.defaultNumLogics.result000.rc00034;
 						}
 					case 3:
-						let tempResult2 = this.isEndSur.map((val,i) => Number(!val[1] && (this.hands4way[i]===0)));
-						if(tempResult2.findIndex((val) => val == 1) >= 0){
-							return [tempResult2,"1323"];	//3方向行き止まり1
+						let targetDir:number = this.hands4way.findIndex((hon,dir) => !this.isEndSur[dir][1] && hon === 0);
+						if(targetDir >= 0){
+							return [hbc.default4way.plus1[targetDir],"1323"];	//3方向行き止まり1
 						}else{
-							return [hashiConstants.all0Result,"00035"];
+							return hc.defaultNumLogics.result000.rc00035;
 						}
 					default:
-						return [hashiConstants.all0Result,"00036"];
+						return hc.defaultNumLogics.result000.rc00036;
 				}
 		}
 	}
@@ -687,23 +674,23 @@ export class Num {
 						if(isEndSurCount[2] == 1 && this.remain4way.findIndex((val,i) =>val === 1 && this.hands4way[i] === 0) >= 0){
 							return [this.isEndSur.map((val) => Number(!val[0])),"1231"]
 						}else{
-							return [this.remain4way.map((val) => Number(val == 2)),"12112"];
+							return [hbc.default4way.plus1[this.remain4way.findIndex(val => val == 2)],"12112"];
 						}
 					}else{
 						switch(isEndSurCount[2]) {
 							case 1:
-								return [this.isEndSur.map((val) => Number(!(val[0] || val[2]))),"1222"];
+								return [hbc.default4way.plus1[this.isEndSur.findIndex(val => !val[0] && !val[2])],"1222"];
 							case 2:
 								return [this.isEndSur.map((val) => Number(val[2])),"1223"];
 							default:
-								return [hashiConstants.all0Result,"00021"];
+								return hc.defaultNumLogics.result000.rc00021;
 						}
 					}
 				}else{
 					if(remain1count === 1){
-						return [this.remain4way.map(rem=>Number(rem===2)),"12111"];
+						return [hbc.default4way.plus1[this.remain4way.findIndex(rem=>rem === 2)],"12111"];
 					}else{
-						return [hashiConstants.all0Result,"00022"];
+						return hc.defaultNumLogics.result000.rc00022;
 					}
 				}
 			case 1:
@@ -718,72 +705,74 @@ export class Num {
 							});
 							switch(countNoHandsDir){
 								case 3:
-									return [hashiConstants.all0Result,"9221"];
+									return [hbc.default4way.all0,"9221"];
 								case 2:
 									return [tempResult1,"1225"];
 								case 1:
 									return [tempResult1,"1224"];
 								default://case 0
-									 return [hashiConstants.all0Result,"00023"];
+									 return hc.defaultNumLogics.result000.rc00023;
 							}
 						case 2:
-							let tempResult2 = this.isEndSur.map((val,i) =>Number(!(val[0] || val[1]) && (this.hands4way[i]==0)));
-							if(tempResult2.findIndex((val) => val == 1) >= 0){
-								return [tempResult2,"1221"];
+							const targetDir:number = this.isEndSur.findIndex((val,i) =>!val[0] && !val[1] && this.hands4way[i]==0);
+							if(targetDir >= 0){
+								return [hbc.default4way.plus1[targetDir],"1221"];
 							}else{
-								return [hashiConstants.all0Result,"00024"];
+								return hc.defaultNumLogics.result000.rc00024;
 							}
 						default:
-							return [hashiConstants.all0Result,"00025"];
+							return hc.defaultNumLogics.result000.rc00025;
 					}
 				}else{
-					return [hashiConstants.all0Result,"00026"];
+					return hc.defaultNumLogics.result000.rc00026;
 				}
 			default:
 				switch(isEndSurCount[1]){
-					case 4:
+					case 4: //1111
 						let countNoHandsDir:number=0;
-						let tempResult:number[] = this.hands4way.map((hon)=>{
+						const tempResult:number[] = this.hands4way.map((hon)=>{
 							let flg:boolean = hon===0;
 							countNoHandsDir += Number(flg);
 							return Number(flg);
 						});
 						switch(countNoHandsDir){
 							case 4:
-								return [hashiConstants.all0Result,"9222"];
+								return [hbc.default4way.all0,"9222"];
 							/*
 							case 3:
 								//引けない方向が一方向確定する
 								return [tempResult.map(val=>val-1),"1241"];
 							*/
 							default:
-								return [hashiConstants.all0Result,"00027"];
+								return hc.defaultNumLogics.result000.rc00027;
 
 						}
 					case 3:
-						if(this.isEndSur.findIndex((arr,dir)=>arr[1] &&  this.hands4way[dir] > 0) >= 0){
-							return [hashiConstants.all0Result,"00028"];
+						//1112なので手が出ているとすれば1の方向のみ
+						if(this.isEndSur.findIndex((arr,dir)=>arr[1] && this.hands4way[dir] > 0) >= 0){
+							return hc.defaultNumLogics.result000.rc00028;
 						}else{
-							return [this.isEndSur.map(arr=>Number(!arr[1])),"1226"];
+							///行き止まり1に手が出ていないので2の方向に逃がす
+							return [hbc.default4way.plus1[this.isEndSur.findIndex(arr=>!arr[1])],"1226"];
 						}
 					default:
-						return [hashiConstants.all0Result,"00029"];
+						return hc.defaultNumLogics.result000.rc00029;
 				}
 		}
 	}
 	private logic1(remain0count:number,isEndSurCount:number[]):[number[],string]{
 		switch(remain0count){
 			case 3:
-				return [this.remain4way.map((val) => Number(val > 0)),"1101"];
+				return [hbc.default4way.plus1[this.remain4way.findIndex(val => val > 0)],"1101"];
 			case 2:
 				if(isEndSurCount[0] == 2){
 					switch(isEndSurCount[1]){
 						case 1:
-							let tempResult = this.isEndSur.map((val,dir) => Number(!val[0] && !val[1] && this.hands4way[dir] == 0));
-							if(tempResult.findIndex((val) => val == 1) >= 0){
-								return [tempResult,"1123"];
+							const targetDir = this.isEndSur.findIndex((val,dir) => !val[0] && !val[1] && this.hands4way[dir] == 0);
+							if(targetDir >= 0){
+								return [hbc.default4way.plus1[targetDir],"1123"];
 							}else{
-								return [hashiConstants.all0Result,"00011"];
+								return hc.defaultNumLogics.result000.rc00011;
 							}
 						case 2:
 							let countFlg:number=0;
@@ -794,39 +783,39 @@ export class Num {
 							});
 							switch(countFlg){
 								case 2:
-									return [hashiConstants.all0Result,"9121"];
+									return [hbc.default4way.all0,"9121"];
 								case 1:
 									return [tempResult2,"1124"];
 								default:	//case 0
-									return [hashiConstants.all0Result,"00012"];
+									return hc.defaultNumLogics.result000.rc00012;
 							}
 						default:
-							return [hashiConstants.all0Result,"00013"];
+							return hc.defaultNumLogics.result000.rc00013;
 					}
 				}else{
-					return [hashiConstants.all0Result,"00014"];
+					return hc.defaultNumLogics.result000.rc00014;
 				}
 			case 1:
 				if(isEndSurCount[0] == 1){
 					switch(isEndSurCount[1]){
 						case 3:
 							if(this.hands4way.findIndex((val) =>val > 0) >= 0){
-								return [hashiConstants.all0Result,"00015"];
+								return hc.defaultNumLogics.result000.rc00015;
 							}else{
-								return [hashiConstants.all0Result,"9123"];
+								return [hbc.default4way.all0,"9123"];
 							}
 						case 2:
-							if(this.hands4way.findIndex((val) =>val > 0) >= 0){
-								return [hashiConstants.all0Result,"00016"];
+							if(this.hands4way.findIndex((val,dir) =>val > 0 && !this.isEndSur[dir][0]) >= 0){
+								return hc.defaultNumLogics.result000.rc00016;
 							}else{
-								return [this.isEndSur.map((val) => Number(val[0] == false && val[1] == false)),"1121"];
+								return [hbc.default4way.plus1[this.isEndSur.findIndex(val => !val[0] && !val[1])],"1121"];
 							}
 						default:
-							return [hashiConstants.all0Result,"00017"];
+							return hc.defaultNumLogics.result000.rc00017;
 
 					}
 				}else{
-					return [hashiConstants.all0Result,"00018"];
+					return hc.defaultNumLogics.result000.rc00018;
 				}
 			default:
 				switch(isEndSurCount[1]){
@@ -839,16 +828,16 @@ export class Num {
 						if(countNoHandsDir===4){
 							return [tempResult,"1122"];
 						}else{
-							return [hashiConstants.all0Result,"00019"]
+							return hc.defaultNumLogics.result000.rc00019;
 						}
 					case 4:
 						if(this.hands4way.findIndex((val) =>val > 0) >= 0){
-							return [hashiConstants.all0Result,"000110"];
+							return hc.defaultNumLogics.result000.rc000110;
 						}else{
-							return [hashiConstants.all0Result,"9124"];
+							return [hbc.default4way.all0,"9124"];
 						}
 					default:
-						return [hashiConstants.all0Result,"000111"];
+						return hc.defaultNumLogics.result000.rc000111;
 				}
 		}
 	}
@@ -897,6 +886,7 @@ export class Num {
 	 */
 	public getExecMin1result(area:number):number[]{
 		let areaRemain:number = this.remainSelf - Math.max(this.remain4way[area],this.remain4way[(area+1)%4]);
+		//編集するためall0定数は使えない
 		let result:number[] = [0,0,0,0];
 		result[(area+2)%4] = areaRemain - this.remain4way[(area+3)%4];
 		result[(area+3)%4] = areaRemain - this.remain4way[(area+2)%4];

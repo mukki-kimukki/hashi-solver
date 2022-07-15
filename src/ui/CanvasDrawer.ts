@@ -1,6 +1,7 @@
 import { HashiController } from "../solver/HashiController";
 import { Num } from "../solver/Num";
 import { ResultLog } from "../solver/ResultLog";
+import { HashiBaseConstants as hbc} from "../solver/HashiBaseConstants";
 
 export class CanvasDrawer{
     private numsCanvas:HTMLCanvasElement;
@@ -29,6 +30,7 @@ export class CanvasDrawer{
     private boardSize:number[] = [];
     private numDict:Num[][] =[[]];
     private resultLogArr:ResultLog[] = [];
+    /** x:[0] y:[1]*/
     private numPosDict:Map<number,number[]> = new Map();
     private numPathDict:Map<number,Path2D> = new Map();
     private resultPathArr:Path2D[] = [];//線の描画用
@@ -64,9 +66,9 @@ export class CanvasDrawer{
         
     }
 
-    public drawNums(hashiCntl:HashiController){
-        this.boardSize = hashiCntl.getBoardSize();
-        this.numDict = hashiCntl.getNumDict();
+    public drawNums(hashiCtrl:HashiController){
+        this.boardSize = hashiCtrl.getBoardSize();
+        this.numDict = hashiCtrl.getNumDict();
 
         let width:number = (this.boardSize[0] + 1)  * this.gridSize;
         let height:number = (this.boardSize[1] + 1) * this.gridSize;
@@ -109,9 +111,8 @@ export class CanvasDrawer{
         });
     }
 
-    public drawAllResult(hashiCntl:HashiController):void{
-        this.resultLogArr = hashiCntl.getResultLog();
-        let rootNumIdList:number[];
+    public drawAllResult(hashiCtrl:HashiController):void{
+        this.resultLogArr = hashiCtrl.getResultLog();
         let rootNum:Num;
         let rootPos:number[];
         let lineToPos:number[];
@@ -178,28 +179,8 @@ export class CanvasDrawer{
                     }else if(val<0){
                         //×記入
                         //×の記入地点への数字中心からのずれ
-                        let diff:number = this.gridSize/2;
-                        switch(dir){
-                            case 0:
-                                xPosAdd = -diff;
-                                yPosAdd = 0;
-                                break;
-                            case 1:
-                                xPosAdd = 0;
-                                yPosAdd = -diff;
-                                break;
-                            case 2:
-                                xPosAdd = diff;
-                                yPosAdd = 0;
-                                break;
-                            case 3:
-                                xPosAdd = 0;
-                                yPosAdd = diff;
-                                break;
-                            default:
-                                //発生しない
-                                break;
-                        }
+                        xPosAdd =  hbc.dirX[dir] * this.gridSize/2;
+                        yPosAdd =  hbc.dirY[dir] * this.gridSize/2;
                         //×のサイズ
                         let diff2:number=this.gridSize/6
                         //左下→右上線
@@ -247,7 +228,7 @@ export class CanvasDrawer{
         this.linesContext.stroke(this.resultPathArr[step]);
         let checkNumIdList:number[] = this.resultLogArr[step].getCheckedNumIdList().concat();
         let targetNumIdList:number[] = this.resultLogArr[step].getTargetNumIdList().concat();
-        //ターゲットがチェックリストに含まれる場合、チェックリストの描画対象からターゲットを外す
+        //手筋実行対象がチェック対象リストに含まれる場合に描画対象から外す
         targetNumIdList.forEach(id=>{
             let targetIndexInCheckList:number = checkNumIdList.indexOf(id);
             if(targetIndexInCheckList >= 0){

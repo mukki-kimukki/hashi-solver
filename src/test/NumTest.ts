@@ -1,5 +1,6 @@
 import { Num } from "../solver/Num";
 
+
 function remainOf(p:number):number{
     switch(p){
         case -1:
@@ -46,8 +47,8 @@ function drawCountP(p:number):number{
             return 2;
         case 1:
             //行き止まり0
-            //m=0;
-            //何もしない
+            //m=2;
+            //num.setRemain1way(dir,0);
             return 0;
         case 2:
             //not行き止まり腕なし1
@@ -116,7 +117,7 @@ function initMap(dir:number,p:number,numMap:number[][]):void{
             break;
         case 1:
             //行き止まり0
-            m=0;
+            m=2;
             break;
         case 2:
             //not行き止まり腕なし1
@@ -160,8 +161,8 @@ function initDir(dir:number,p:number,num:Num):void{
             break;
         case 1:
             //行き止まり0
-            //m=0;
-            //何もしない
+            //m=2;
+            num.setRemain1way(dir,0);
             break;
         case 2:
             //not行き止まり腕なし1
@@ -221,8 +222,8 @@ function checkEnd(p:number,hon:number):boolean{
             return false;
         case 1:
             //行き止まり0
-                //m=0;
-                    //何もしない
+                //m=2;
+                    //num.setRemain1way(dir,0);
             return true;
         case 2:
             //not行き止まり腕なし1
@@ -296,14 +297,15 @@ function expectResult(num:Num,p0:number,p1:number,p2:number,p3:number):[number[]
                 tempResult2[2]=hon2;
                 const hon3 = remain1-hon2;
                 tempResult2[3]=hon3;
-                const endFlg2 = endFlg1 && checkEnd(p2,hon2);
-                const endFlg3 = endFlg2 && checkEnd(p3,hon3);
-                if(endFlg3){
-                    if(hon0===remain4way[0] && hon1===remain4way[1] && hon2===remain4way[2] && hon3===remain4way[3] && hon3 <= remain4way[3]){
-                        list.push(tempResult2);
-                    }
-                }else{
-                    if(hon3 <= remain4way[3]){
+                if(hon3 <= remain4way[3]){
+                    const endFlg2 = endFlg1 && checkEnd(p2,hon2);
+                    const endFlg3 = endFlg2 && checkEnd(p3,hon3);
+                    if(endFlg3){
+                        //使い切りパターンは行き止まり判定を行わない
+                        if(hon0===remain4way[0] && hon1===remain4way[1] && hon2===remain4way[2] && hon3===remain4way[3]){
+                            list.push(tempResult2);
+                        }
+                    }else{
                         list.push(tempResult2);
                     }
                 }
@@ -346,25 +348,31 @@ function testNum(n:number,p0:number,p1:number,p2:number,p3:number):number{
     initMap(3,p3,numMap);
     numMap[2][2]=n;
     const num = initNum(p0,p1,p2,p3,numMap);
-    const actual:[number[],string] = num.checkLogics(false)[0];
-    const expect:[number[],string] = expectResult(num,p0,p1,p2,p3);
-    if(actual[1].charAt(0) !== expect[1].charAt(0)){
+    try{
+        const actual:[number[],string] = num.checkLogics(false)[0];
+        const expect:[number[],string] = expectResult(num,p0,p1,p2,p3);
+        if(actual[1].charAt(0) !== expect[1].charAt(0)){
+            const remain:number = n - drawCountP(p0) - drawCountP(p1) - drawCountP(p2) - drawCountP(p3);
+            console.log("at n = " + remain + " p0p1p2p3 =" + String(p0)+String(p1)+String(p2)+String(p3));
+            console.log(" expected " + expect);
+            console.log(" actualy  " + actual);
+            console.log("-------------------------");
+            return 1;
+        }else if(actual[0].reduce((prev,cur,i,exp = expect[0])=>Number(prev === 1 || cur !== exp[i]),0)){
+            const remain:number = n - drawCountP(p0) - drawCountP(p1) - drawCountP(p2) - drawCountP(p3);
+            console.log("at n = " + remain + " p0p1p2p3 =" + String(p0)+String(p1)+String(p2)+String(p3));
+            console.log(" expected " + expect);
+            console.log(" actualy  " + actual);
+            console.log("-------------------------");
+            return 1;
+        }else{
+            return 0;
+        }
+    }catch(e){
         const remain:number = n - drawCountP(p0) - drawCountP(p1) - drawCountP(p2) - drawCountP(p3);
-        console.log("at n = " + remain + " p0p1p2p3 =" + String(p0)+String(p1)+String(p2)+String(p3));
-        console.log(" expected " + expect);
-        console.log(" actualy  " + actual);
-        console.log("-------------------------");
-        return 1;
-    }else if(actual[0].reduce((prev,cur,i,exp = expect[0])=>Number(prev === 1 || cur !== exp[i]),0)){
-        const remain:number = n - drawCountP(p0) - drawCountP(p1) - drawCountP(p2) - drawCountP(p3);
-        console.log("at n = " + remain + " p0p1p2p3 =" + String(p0)+String(p1)+String(p2)+String(p3));
-        console.log(" expected " + expect);
-        console.log(" actualy  " + actual);
-        console.log("-------------------------");
-        return 1;
-    }else{
-        return 0;
+        throw new Error("error at remain= " + remain + " p0p1p2p3 =" +String(p0)+String(p1)+String(p2)+String(p3));
     }
+
 }
 
 function checkDrawCount(n:number,p0:number,p1:number,p2:number,p3:number):boolean{

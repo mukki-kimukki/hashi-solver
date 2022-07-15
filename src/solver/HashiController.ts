@@ -1,5 +1,5 @@
 import { HashiBoard } from "./HashiBoard";
-import { hashiConstants } from "./hashiConstants";
+import { HashiConstants  as hc} from "./HashiConstants";
 import { Num } from "./Num";
 import { ResultLog } from "./ResultLog";
 export class HashiController{
@@ -23,7 +23,7 @@ export class HashiController{
         this.solveTime = endTime -startTime;
         console.log("finished: " + (this.solveTime) + " ms");
         console.log(result);
-        console.log(hashiConstants.resultDict.get(result));
+        console.log(hc.resultDict.get(result));
         this.hashiBoard.getResultLogArr().forEach(log=>log.consoleLog());
         this.output(0);
             
