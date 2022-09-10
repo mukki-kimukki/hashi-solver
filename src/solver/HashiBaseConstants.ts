@@ -48,6 +48,8 @@ export namespace HashiBaseConstants{
         rc00052:"00052",
         rc00053:"00053",
         rc00061:"00061",
+        /**URL取り込み */
+        rcI00:"I00",
     } as const
 }
 

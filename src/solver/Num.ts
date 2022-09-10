@@ -481,7 +481,7 @@ export class Num {
 			if(isEndSurCount[2] == 3 && this.hands4way[this.remain4way.findIndex((val)=>val==1)] == 0){
 				return [hbc.default4way.all1,"1631"];
 			}else{
-				return [hbc.default4way.one0[this.hands4way.findIndex(val => val==0)],"1611"];
+				return [hbc.default4way.one0[this.remain4way.findIndex(val => val===1)],"1611"];
 			}
 		}else{
 			switch(isEndSurCount[2]){
@@ -496,7 +496,7 @@ export class Num {
 	}
 	private logic5(remain0count:number,remain1count:number,isEndSurCount:number[]):[number[],string]{
 		if(remain0count == 1){
-			return [hbc.default4way.one0[this.remain4way.findIndex(val => val != 0)],"1501"];	//壁5
+			return [hbc.default4way.one0[this.remain4way.findIndex(val => val === 0)],"1501"];	//壁5
 		}else{
 			switch(remain1count){
 				case 2:	//残り本数は6以上かつ残り1が2方向なので周囲の残り本数は1122で確定

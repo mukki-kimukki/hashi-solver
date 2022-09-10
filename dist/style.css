@@ -21,11 +21,16 @@
     border-style: solid;
     border: 2px;
     border-color: black;
+    overflow-y: scroll;
 }
 
-#stepList{
+.stepList{
     list-style: none;
-    overflow-y: scroll;
+    
+}
+
+.stepListDiv{
+    display: inline-flex;
 }
 
 .step{
