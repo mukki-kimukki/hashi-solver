@@ -2,6 +2,7 @@ import { HashiController } from "../solver/HashiController";
 import { Num } from "../solver/Num";
 import { ResultLog } from "../solver/ResultLog";
 import { HashiBaseConstants as hbc} from "../solver/HashiBaseConstants";
+import { Address } from "../common/Types";
 
 export class CanvasDrawer{
     private numsCanvas:HTMLCanvasElement;
@@ -31,7 +32,7 @@ export class CanvasDrawer{
     private numDict:Num[][] =[[]];
     private resultLogArr:ResultLog[] = [];
     /** x:[0] y:[1]*/
-    private numPosDict:Map<number,number[]> = new Map();
+    private numPosDict:Map<number,Address> = new Map();
     private numPathDict:Map<number,Path2D> = new Map();
     private resultPathArr:Path2D[] = [];//線の描画用
     private resultMaskMap:Map<number,Path2D> = new Map();//2本目を引く際の一本目マスク用
@@ -88,9 +89,9 @@ export class CanvasDrawer{
         let centerX:number;
         let centerY:number;
         this.numDict[0].forEach((num) =>{
-            centerX = (num.getAddress()[1] + 1) * this.gridSize;
-            centerY = (num.getAddress()[0] + 1) * this.gridSize;
-            this.numPosDict.set(num.getId(), [centerX, centerY]);
+            centerX = (num.getAddress().x + 1) * this.gridSize;
+            centerY = (num.getAddress().y + 1) * this.gridSize;
+            this.numPosDict.set(num.getId(), {x:centerX, y:centerY});
 
             let numPath:Path2D = new Path2D();
             numPath.arc(centerX, centerY, this.gridSize/3, 0,Math.PI * 2);
@@ -114,8 +115,8 @@ export class CanvasDrawer{
     public drawAllResult(hashiCtrl:HashiController):void{
         this.resultLogArr = hashiCtrl.getResultLog();
         let rootNum:Num;
-        let rootPos:number[];
-        let lineToPos:number[];
+        let rootPos:Address;
+        let lineToPos:Address;
         let xPosAdd:number;
         let yPosAdd:number;
         let pathLog:boolean[][]=new Array();//(id,dir)で線を引いたか格納
@@ -132,11 +133,11 @@ export class CanvasDrawer{
             result.getResult4wayList().forEach((result4way,i)=>{
                 rootNumId =rootNumIdList[i];
                 rootNum = this.numDict[0][rootNumId];
-                rootPos = this.numPosDict.get(rootNumId) as number[];
-                result4way.forEach((val,dir)=>{
+                rootPos = this.numPosDict.get(rootNumId) as Address;
+                result4way.forEach((val:number,dir:number)=>{
                     if(val>0){
                         //線記入
-                        lineToPos =  this.numPosDict.get(rootNum.getSurNumId()[dir]) as number[];
+                        lineToPos =  this.numPosDict.get(rootNum.getSurNumId()[dir]) as Address;
                         let logNumId:number; 
                         let logDir:number;
                         //線の引き方向を右か下にそろえた時の根元と方向
@@ -151,18 +152,18 @@ export class CanvasDrawer{
                         //線記入済みチェック
                         if(pathLog[logNumId][logDir] || val===2){
                             //1本目引き済みまたは2本同時引き
-                            if(rootPos[0]===lineToPos[0]){
-                                resultPath.rect(rootPos[0] - this.lineSpacing/2, Math.min(rootPos[1],lineToPos[1]), this.lineSpacing, Math.abs(rootPos[1] - lineToPos[1]));
+                            if(rootPos.x===lineToPos.x){
+                                resultPath.rect(rootPos.x - this.lineSpacing/2, Math.min(rootPos.y,lineToPos.y), this.lineSpacing, Math.abs(rootPos.y - lineToPos.y));
                             }else{
-                                resultPath.rect(Math.min(rootPos[0],lineToPos[0]), rootPos[1] - this.lineSpacing/2, Math.abs(rootPos[0] - lineToPos[0]), this.lineSpacing);
+                                resultPath.rect(Math.min(rootPos.x,lineToPos.x), rootPos.y - this.lineSpacing/2, Math.abs(rootPos.x - lineToPos.x), this.lineSpacing);
                             }
     
                             if(val!==2){
                                 
-                                if(rootPos[0]===lineToPos[0]){
-                                    resultPathMask.rect(rootPos[0] - (this.lineSpacing - this.lineWidth)/2, Math.min(rootPos[1],lineToPos[1]), this.lineSpacing -this.lineWidth, Math.abs(rootPos[1] - lineToPos[1]));
+                                if(rootPos.x===lineToPos.x){
+                                    resultPathMask.rect(rootPos.x - (this.lineSpacing - this.lineWidth)/2, Math.min(rootPos.y,lineToPos.y), this.lineSpacing -this.lineWidth, Math.abs(rootPos.y - lineToPos.y));
                                 }else{
-                                    resultPathMask.rect(Math.min(rootPos[0],lineToPos[0]), rootPos[1] - (this.lineSpacing - this.lineWidth)/2, Math.abs(rootPos[0] - lineToPos[0]), this.lineSpacing - this.lineWidth);
+                                    resultPathMask.rect(Math.min(rootPos.x,lineToPos.x), rootPos.y - (this.lineSpacing - this.lineWidth)/2, Math.abs(rootPos.x - lineToPos.x), this.lineSpacing - this.lineWidth);
                                 }
         
                                 masked=true;
@@ -170,8 +171,8 @@ export class CanvasDrawer{
     
                         }else{
                             //1本目未
-                            resultPath.moveTo(rootPos[0], rootPos[1]);
-                            resultPath.lineTo(lineToPos[0],lineToPos[1]);
+                            resultPath.moveTo(rootPos.x, rootPos.y);
+                            resultPath.lineTo(lineToPos.x,lineToPos.y);
                             pathLog[logNumId][logDir]=true;
                         }
     
@@ -184,11 +185,11 @@ export class CanvasDrawer{
                         //×のサイズ
                         let diff2:number=this.gridSize/6
                         //左下→右上線
-                        resultPath.moveTo(rootPos[0] + xPosAdd - diff2, rootPos[1] + yPosAdd - diff2);
-                        resultPath.lineTo(rootPos[0] + xPosAdd + diff2, rootPos[1] + yPosAdd + diff2);
+                        resultPath.moveTo(rootPos.x + xPosAdd - diff2, rootPos.y + yPosAdd - diff2);
+                        resultPath.lineTo(rootPos.x + xPosAdd + diff2, rootPos.y + yPosAdd + diff2);
                         //左上→右下線
-                        resultPath.moveTo(rootPos[0] + xPosAdd - diff2, rootPos[1] + yPosAdd + diff2);
-                        resultPath.lineTo(rootPos[0] + xPosAdd + diff2, rootPos[1] + yPosAdd - diff2);
+                        resultPath.moveTo(rootPos.x + xPosAdd - diff2, rootPos.y + yPosAdd + diff2);
+                        resultPath.lineTo(rootPos.x + xPosAdd + diff2, rootPos.y + yPosAdd - diff2);
                     }
                 });
             });

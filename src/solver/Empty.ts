@@ -1,5 +1,6 @@
+import { N4way } from "../common/Types";
 export class Empty{
-	private id4way:number[] = [-1,-1,-1,-1];
+	private id4way:N4way = [-1,-1,-1,-1];
 
     constructor(y:number,x:number,numIdMap:number[][]){
 		let pos:number = -1;						//縦または横方向の(x,y)からの相対位置:左から調べるので初期値は-1
@@ -66,7 +67,7 @@ export class Empty{
     }
 
 
-	public getSurNumId():number[]{
+	public getSurNumId():N4way{
 		return this.id4way;
 	}
 }

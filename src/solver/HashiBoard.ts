@@ -6,6 +6,7 @@ import {Num} from "./Num";
 import {ResultLog} from"./ResultLog";
 import {HashiConstants as hc} from "./HashiConstants";
 import {HashiBaseConstants as hbc} from "./HashiBaseConstants";
+import {N4way,DefResult,NumResult} from "../common/Types";
 
 export class HashiBoard {
 
@@ -185,7 +186,7 @@ export class HashiBoard {
 		//手筋領域
 		let numId:number|undefined = this.numsToCheckStack.pop();
 		let fromNum:Num;
-		let logicResult:[[number[],string],number];
+		let logicResult:NumResult;
 		let islandCheckResult:boolean;
 		do{
 			//本数確定系ループ
@@ -207,7 +208,7 @@ export class HashiBoard {
 							// console.log("depth=" + depth + " " + fromNum.getAddress() + " " + logicResult[0]);
 							//仮定でない場合、確定内容の履歴を作成
 							this.resultLogArr[depth].push(new ResultLog([numId],[numId],[logicResult[0][0]],logicResult[0][1]));
-							logicResult[0][0].forEach((hon,dir) => this.drawLine(depth,fromNum,logicResult[1],hon,dir));
+							logicResult[0][0].forEach((hon:number,dir:number) => this.drawLine(depth,fromNum,logicResult[1],hon,dir));
 							//残り本数が0の場合は島に伝える
 							if(logicResult[1] == 0){
 								(this.islands.get(fromNum.getParentIslandId()) as Island).inactivateNum(depth,numId);
@@ -260,8 +261,8 @@ export class HashiBoard {
 		let prevTarget:Num = this.numDict[depth-1][tryTargetId];
 		let tryTargetId2:number = prevTarget.getSurNumId()[dir];
 		let prevTarget2:Num = this.numDict[depth-1][tryTargetId2];
-		let resultCheck1:[[number[],string],number] = prevTarget.trySetRemain1way(dir,0);
-		let resultCheck2:[[number[],string],number] = prevTarget2.trySetRemain1way((dir + 2) % 4,0);
+		let resultCheck1:NumResult = prevTarget.trySetRemain1way(dir,0);
+		let resultCheck2:NumResult = prevTarget2.trySetRemain1way((dir + 2) % 4,0);
 		//このresultCheckは破綻にならない（破綻する場合通常手筋の適用範囲内）
 		
 		//有効な仮定の場合
@@ -351,19 +352,19 @@ export class HashiBoard {
 			return false;
 		}else{
 			//残り本数と同じ残り引き本数の数字がない場合無意味なのでスキップ...条件1
-			if(targetNum0.getRemain4way().findIndex(val => val == targetRemain) < 0){
+			if(targetNum0.getRemain4way().findIndex((val: number) => val == targetRemain) < 0){
 				return false;
 			}
 			// console.log("try-deadend id=" + tryTargetId);
 			//仮定初期化
 			this.initDepth(depth);
-			let hands4way:number[] = targetNum0.getHands4way();
-			let remain4way:number[] = targetNum0.getRemain4way();
+			let hands4way:N4way = targetNum0.getHands4way();
+			let remain4way:N4way = targetNum0.getRemain4way();
 			let handsRemainDirCount:number = 0;
 			let handsRemainDir:number = 0;
 			let targetList:number[]=[];
 			let targetDirList:number[]=[];
-			targetNum0.getSurNumId().forEach((set0Id,dir) => {
+			targetNum0.getSurNumId().forEach((set0Id: number,dir: number) => {
 				// console.log("dir=" + dir);
 				//条件1の方向は含めない...条件2
 				if(remain4way[dir] > 0 && (hands4way[dir] > 0 || remain4way[dir] != targetRemain)){
@@ -399,7 +400,7 @@ export class HashiBoard {
 		
 				//調査対象に0本指定した数字以外から線を引いていた場合無効
 				let drawDir:number = -1;
-				let drawCount:number = tryTarget.getHands4way().reduce((prev,hon,dir) => {
+				let drawCount:number = tryTarget.getHands4way().reduce((prev:number,hon:number,dir:number) => {
 					let tempFlg:boolean = hon > hands4way[dir];
 					if(tempFlg){
 						drawDir = dir;
@@ -413,7 +414,7 @@ export class HashiBoard {
 						let targetIsland:Island = this.islands.get(tryTarget.getParentIslandId()) as Island
 						//島で残っている数字が調査対象のみの場合(引ききりで行き止まりとなる場合)
 						if((targetIsland.getActiveNumList(depth).length - Number(tryTarget.getRemainSelf() > 0)) == 0){
-							targetNum0.getSurNumId().forEach((id,dir) =>{
+							targetNum0.getSurNumId().forEach((id:number,dir:number) =>{
 								//条件2の対偶:線を引ききる可能性のある方向(条件2自体はset0の対象外を外すためにremain>0を加えている)
 								if(hands4way[dir] == 0 && remain4way[dir] == targetRemain){
 									// console.log("setRem0 Id=" + id + " dir= " + (dir + 2) % 4);
@@ -557,8 +558,8 @@ export class HashiBoard {
 			switch(dir){
 				case 0:
 					pos = -1;	//左
-					while(this.boardAbst[fromAddress[0]][fromAddress[1] + pos] == 0){
-						this.boardEmpty[fromAddress[0]][fromAddress[1] + pos].getVerNumId().forEach((id,i) =>{
+					while(this.boardAbst[fromAddress.y][fromAddress.x + pos] == 0){
+						this.boardEmpty[fromAddress.y][fromAddress.x + pos].getVerNumId().forEach((id,i) =>{
 							if(id >= 0){
 								nextTarget = this.getDepthNum(depth,id);
 								if(nextTarget.getRemainSelf() >0){
@@ -573,8 +574,8 @@ export class HashiBoard {
 					break;
 				case 1:
 					pos = -1;	//上
-					while(this.boardAbst[fromAddress[0] + pos][fromAddress[1]] == 0){
-						this.boardEmpty[fromAddress[0] + pos][fromAddress[1]].getHorNumId().forEach((id,i) =>{
+					while(this.boardAbst[fromAddress.y + pos][fromAddress.x] == 0){
+						this.boardEmpty[fromAddress.y + pos][fromAddress.x].getHorNumId().forEach((id,i) =>{
 							if(id >= 0){
 								nextTarget = this.getDepthNum(depth,id);
 								if(nextTarget.getRemainSelf() >0){
@@ -589,8 +590,8 @@ export class HashiBoard {
 					break;
 				case 2:
 					pos = 1;		//右
-					while(this.boardAbst[fromAddress[0]][fromAddress[1] + pos] == 0){
-						this.boardEmpty[fromAddress[0]][fromAddress[1] + pos].getVerNumId().forEach((id,i) =>{
+					while(this.boardAbst[fromAddress.y][fromAddress.x + pos] == 0){
+						this.boardEmpty[fromAddress.y][fromAddress.x + pos].getVerNumId().forEach((id,i) =>{
 							if(id >= 0){
 								nextTarget = this.getDepthNum(depth,id);
 								if(nextTarget.getRemainSelf() >0){
@@ -605,8 +606,8 @@ export class HashiBoard {
 					break;
 				case 3:
 					pos = 1;	//下
-					while(this.boardAbst[fromAddress[0] + pos][fromAddress[1]] == 0){
-						this.boardEmpty[fromAddress[0] + pos][fromAddress[1]].getHorNumId().forEach((id,i) =>{
+					while(this.boardAbst[fromAddress.y + pos][fromAddress.x] == 0){
+						this.boardEmpty[fromAddress.y + pos][fromAddress.x].getHorNumId().forEach((id,i) =>{
 							if(id >= 0){
 								nextTarget = this.getDepthNum(depth,id);
 								if(nextTarget.getRemainSelf() >0){
@@ -653,7 +654,7 @@ export class HashiBoard {
 
 	private notify4way(depth:number,rootId:number,remain:number):boolean{
 		let result:boolean = false;
-		this.numDict[depth][rootId].getSurNumId().forEach((targetId,dir)=>{
+		this.numDict[depth][rootId].getSurNumId().forEach((targetId:number,dir:number)=>{
 			if(targetId>=0){
 				let targetNum:Num = this.getDepthNum(depth,targetId);
 				if(targetNum.getRemainSelf() > 0){
@@ -668,7 +669,7 @@ export class HashiBoard {
 		return result;
 	}
 
-	private drawFrom4way(depth:number,fromId:number,draw4way:number[]):void{
+	private drawFrom4way(depth:number,fromId:number,draw4way:N4way):void{
 		let targetNum = this.getDepthNum(depth,fromId);
 		let remain:number = targetNum.execLogic(draw4way);
 		this.drawTo4way(depth,targetNum,draw4way,remain);
@@ -678,8 +679,8 @@ export class HashiBoard {
 		
 	}
 
-	private drawTo4way(depth:number,fromNum:Num,draw4way:number[],remain:number){
-		draw4way.forEach((hon,dir) => this.drawLine(depth,fromNum,remain,hon,dir));
+	private drawTo4way(depth:number,fromNum:Num,draw4way:N4way,remain:number){
+		draw4way.forEach((hon:number,dir:number) => this.drawLine(depth,fromNum,remain,hon,dir));
 	}
 
 	private mergeIslands(depth:number,rootIslandId:number,mergeIslandId:number):void{
@@ -712,7 +713,7 @@ export class HashiBoard {
 							}
 							this.numsToCheckStack.push(nextTarget.getId());
 							let statusChangeIdList:number[]=[];
-							nextTarget.getSurNumId().forEach((surNumId,dir) => {
+							nextTarget.getSurNumId().forEach((surNumId:number,dir:number) => {
 								//数字IDが0より大きく（存在する）出口数字が2以下の場合に行き止まりを設定できるかチェックする
 								if(surNumId >= 0 && remainSelf <= 2){
 									//自身の残り本数が、受け取った行き止まり手筋用残り本数より多い場合に成功する
@@ -737,7 +738,7 @@ export class HashiBoard {
 						let numIds:number[] = isl.getActiveNumList(depth);
 						let num0:Num = this.numDict[depth][numIds[0]];
 						//出口の数字が二つでその数字が隣接している場合、残り0本の方向は行き止まりとして扱える
-						num0.getSurNumId().forEach((id,dir) =>{
+						num0.getSurNumId().forEach((id:number,dir:number) =>{
 							//idが一致するのは高々1回なのでforeach中に操作してよい
 							if(id == numIds[1]){
 								let tempResult:boolean = false;
@@ -790,10 +791,10 @@ export class HashiBoard {
 				remain2 = this.numDict[depth][this.currentId].getRemain4way()[(area + 3) % 4];
 				if(remain1 > 0 || remain2 >0){
 					if(this.numDict[depth][this.currentId].checkMin1(area) == 2 ){
-						let checkMinResult:[number,number[]] = this.checkMinHonsuSub(depth,this.currentId,area);
+						let checkMinResult:[number,N4way] = this.checkMinHonsuSub(depth,this.currentId,area);
 						if(checkMinResult[0] == 2){
 							target = this.getDepthNum(depth,this.currentId);
-							let result4way:number[] = target.getExecMin1result(area);
+							let result4way:N4way = target.getExecMin1result(area);
 							this.drawFrom4way(depth,this.currentId,result4way);
 							checkMinResult[1].push(this.currentId)
 							this.resultLogArr[depth].push(new ResultLog(checkMinResult[1],[this.currentId],[result4way],"1M00"));
@@ -815,7 +816,7 @@ export class HashiBoard {
 	 * @param area 
 	 * @returns [結果コード,チェック対象リスト]
 	 */
-	private checkMinHonsuSub(depth:number,id:number,area:number):[number,number[]]{
+	private checkMinHonsuSub(depth:number,id:number,area:number):[number,N4way]{
 		let xinc:number;
 		let yinc:number;
 		switch(area){
@@ -841,8 +842,8 @@ export class HashiBoard {
 		let targetDict:number[] =[];
 		let fromAddress = this.numDict[depth][id].getAddress();
 		//呼び出し元で両方向引けることを確かめてundefinedは発生しないようにしておく(checkMin1が1または2なら可)
-		while(this.boardAbst[fromAddress[0] + y][fromAddress[1] + x] == 0){
-			let idToAdd:number = this.boardEmpty[fromAddress[0] + y][fromAddress[1] + x].getSurNumId()[(area + 1) % 4];
+		while(this.boardAbst[fromAddress.y + y][fromAddress.x + x] == 0){
+			let idToAdd:number = this.boardEmpty[fromAddress.y + y][fromAddress.x + x].getSurNumId()[(area + 1) % 4];
 			if(idToAdd >= 0){
 				targetDict.push(idToAdd);
 			}
@@ -871,15 +872,15 @@ export class HashiBoard {
 		x = xinc;
 		y = yinc;
 		
-		while(this.boardAbst[fromAddress[0] + y][fromAddress[1] + x] == 0){
-			let nextId = this.boardEmpty[fromAddress[0] + y][fromAddress[1] + x].getSurNumId()[area];
+		while(this.boardAbst[fromAddress.y + y][fromAddress.x + x] == 0){
+			let nextId = this.boardEmpty[fromAddress.y + y][fromAddress.x + x].getSurNumId()[area];
 			if(targetDict.includes(nextId)){
 				switch(this.numDict[depth][nextId].checkMin1((area + 2) % 4)){
 					case 3:
 					case 2:
 						return [2,[]];
 					case 1:
-						let subResult:[number,number[]] = this.checkMinHonsuSub(depth,nextId,area);
+						let subResult:[number,N4way] = this.checkMinHonsuSub(depth,nextId,area);
 						if(subResult[0] == 2){
 							subResult[1].push(id);
 							return subResult;

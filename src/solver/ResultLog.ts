@@ -1,10 +1,12 @@
+import { N4way } from "../common/Types";
+
 export class ResultLog{
     private readonly numIdCheck:number[];
     private readonly numIdTarget:number[];
-    private readonly result4wayList:number[][]
+    private readonly result4wayList:N4way[]
     private readonly resultCode:string;
     private readonly tryLog:ResultLog[];
-    constructor(numIdCheck:number[],numIdTarget:number[],result4wayList:number[][],resultCode:string,tryLog?:ResultLog[]){
+    constructor(numIdCheck:number[],numIdTarget:number[],result4wayList:N4way[],resultCode:string,tryLog?:ResultLog[]){
         this.numIdCheck = numIdCheck;
         this.numIdTarget =numIdTarget;
         this.result4wayList = result4wayList;
