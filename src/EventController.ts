@@ -1,6 +1,10 @@
 
 import { HashiController } from "./solver/HashiController";
-import { CanvasDrawer } from "./ui/CanvasDrawer";
+import { CanvasDrawer } from "./input/CanvasDrawer";
+import { UiConstants as uc } from "./input/UiConstants";
+import { ResultLog } from "./solver/ResultLog";
+import { InputLog } from "./input/inputLog";
+import { HashiBaseConstants as hbc } from "./solver/HashiBaseConstants";
 
 
     const bodyElement:HTMLBodyElement = document.getElementById("body") as HTMLBodyElement;
@@ -20,16 +24,19 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
     const urlElement:HTMLInputElement = document.getElementById("url") as HTMLInputElement;
     const solveDepthElement:HTMLInputElement = document.getElementById("solveDepth") as HTMLInputElement
 
+    let stepElement:HTMLElement = document.getElementById("divStep") as HTMLElement;
+    let stepListAtDepth:HTMLElement[] = [];
+    let currentTargetLiAtDepth:HTMLElement[];
+    let currentTargetStepIdAtDepth:number[] = [-1];
+    let currentTargetDepth:number = 0;
+    let maxStepIdAtDepth:number[]=[0];
     
-    const stepListElement:HTMLElement = document.getElementById("stepList") as HTMLElement;
-    let currentTargetLi:HTMLElement;
-    let currentTargetStepId:number = -1;
-    let maxStepId:number=0;
-    
-    let hashiCtrl:HashiController = new HashiController();
+    let inputLog:InputLog[]=[];
+    let hashiCtrl:HashiController;
+    let initialBoard:number[][];
     let solvedFlg:boolean =false;
-    const gridSize:number = 30;
-    let drawer = new CanvasDrawer(gridSize);
+    let drawer:CanvasDrawer;
+    let initFlg:boolean = false;
 
     bodyElement.onload = function initialDisplay(){
         autoImport.checked = true;
@@ -89,7 +96,7 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
 
     solveDepthElement.addEventListener('keydown',(keyEvent)=>{
         if(keyEvent.key==="enter"){
-            stepListElement.focus();
+            urlElement.focus();
         }
     });
 
@@ -110,10 +117,15 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
             return
         }
         solvedFlg = false;
+        if(initFlg){
+            inputLog.splice(0);
+            drawer.clearAll();
+        }
         hashiCtrl = new HashiController(url);
-        drawer.clearAll();
-        drawer = new CanvasDrawer(gridSize);
-        drawer.drawNums(hashiCtrl);
+        initialBoard = hashiCtrl.getBoardAbst();
+        inputLog.push(new InputLog([],[],url,hbc.resultCode.rcI00));
+        drawer = new CanvasDrawer(hashiCtrl);
+        initFlg = true;
 
 
         if(autoSolveFlg){
@@ -144,58 +156,100 @@ import { CanvasDrawer } from "./ui/CanvasDrawer";
         }
         hashiCtrl.solve(depth);
         solvedFlg=true;
-        drawer.clearLines();
-        drawer.drawAllResult(hashiCtrl);
-        displayStepList();
+        drawer.drawAllResult(0,hashiCtrl.getResultLog(),uc.DrawType.solverLog);
+        displayStepList(0);
+        currentTargetDepth = 0;
     }
 
-    function displayStepList():void{
-        while(stepListElement.firstChild !== null){
-            stepListElement.removeChild(stepListElement.firstChild);
+    function displayStepList(depth:number):void{
+        //描画済みリストを削
+        deleteStepList(depth);
+
+        //描画対象リストを作成
+        let targetDiv:HTMLElement;
+        targetDiv = document.createElement("div");
+        targetDiv.classList.add("stepListDiv");
+        stepElement.appendChild(targetDiv);
+        let targetUl:HTMLElement = document.createElement("ul");
+        stepListAtDepth.push(targetUl);
+        targetUl.style.paddingTop = String(currentTargetStepIdAtDepth.reduce((prev,cur)=>prev + cur,0) * uc.gridSize) + "px";
+        /**
+        while(targetStepList.firstChild !== null){
+            targetStepList.removeChild(targetStepList.firstChild);
         }
-        stepListElement.style.height=String(gridSize*hashiCtrl.getBoardSize()[0]+"px");
-        currentTargetStepId = -1;
-        maxStepId = hashiCtrl.getResultLog().length -1;
-        let stepLength:number = String(maxStepId).length;
-        hashiCtrl.getResultLog().forEach((log, i)=>{
+        */
+        //targetUl.style.height=String(uc.gridSize*hashiCtrl.getBoardSize()[0]+"px");
+        currentTargetStepIdAtDepth[depth] = -1;
+        let targetLogList:ResultLog[] = hashiCtrl.getResultLog();
+        if(currentTargetDepth > 0){
+            for(let i:number = 1; i <= depth; i++){
+                targetLogList =  targetLogList[currentTargetStepIdAtDepth[i]].getTryLog();
+            }
+        }
+        maxStepIdAtDepth.push(targetLogList.length -1);
+        let stepLength:number = String(maxStepIdAtDepth[depth]).length;
+        targetLogList.forEach((log, i)=>{
             const li:HTMLElement = document.createElement("li");
-            li.id="step" + String(i);
-            li.addEventListener("click",(ev)=>displayStep(i,true));
+            li.id="depth" + String(depth) + "step" + String(i);
+            li.setAttribute("depth",String(depth));
+            li.addEventListener("click",(ev)=>displayStep(depth,i,true));
             li.classList.add("step");
             li.appendChild(document.createTextNode(("00000000" + String(i+1)).slice(-stepLength) + ": " +log.getResultCode()));
-            stepListElement.appendChild(li);
+            targetUl.appendChild(li);
         });
     }
 
-    function displayStep(step:number,clickFlg:boolean):void{
-        if(currentTargetLi !==undefined){
-            currentTargetLi.classList.remove("targetStep");
+    function deleteStepList(depth:number):void{
+        stepListAtDepth.splice(depth).forEach(elm=>{
+            stepElement.removeChild(elm.parentNode as ParentNode); 
+        });
+        currentTargetLiAtDepth.splice(depth);
+        currentTargetStepIdAtDepth.splice(depth);
+        maxStepIdAtDepth.splice(depth);
+    }
+
+    function displayStep(depth:number,step:number,clickFlg:boolean):void{
+        if(currentTargetLiAtDepth.length > depth){
+            currentTargetLiAtDepth[depth].classList.remove("targetStep");
         }
-        const stepLi:HTMLElement = document.getElementById("step" + String(step)) as HTMLElement;
+        const stepLi:HTMLElement = document.getElementById("depth" + String(depth) + "step" + String(step)) as HTMLElement;
         stepLi.classList.add("targetStep");
         const positionCount:number = step-5;
         if(!clickFlg){
-            stepListElement.scrollTo(0,positionCount*20);
+            stepListAtDepth[depth].scrollTo(0,positionCount*20);
         }
-        drawer.drawSteps(step);
-        currentTargetLi = stepLi;
-        currentTargetStepId = step;
+        drawer.drawSteps(depth,step);
+        currentTargetLiAtDepth.push(stepLi);
+        currentTargetStepIdAtDepth.push(step);
     }
 
     document.addEventListener("keydown",(keyEvent)=>{
         if(solvedFlg){
-            if(keyEvent.key==="w"){ //↑
-                if(currentTargetStepId > 0){
-                    displayStep(currentTargetStepId - 1,false);
-                }
-                
-            }else if(keyEvent.key==="s"){ //↓
-                if(currentTargetStepId === -1){
-                    displayStep(0,false)
-                }else if(currentTargetStepId < maxStepId){
-                    displayStep(currentTargetStepId + 1,false);
-                }
-                
+            switch(keyEvent.key){
+                case "w": //↑
+                    if(currentTargetStepIdAtDepth[currentTargetDepth] > 0){
+                        displayStep(currentTargetDepth,currentTargetStepIdAtDepth[currentTargetDepth] - 1,false);
+                    }
+                    break;
+                case "s": //↓
+                    if(currentTargetStepIdAtDepth[currentTargetDepth] === -1){
+                        displayStep(currentTargetDepth,0,false)
+                    }else if(currentTargetStepIdAtDepth[currentTargetDepth] < maxStepIdAtDepth[currentTargetDepth]){
+                        displayStep(currentTargetDepth,currentTargetStepIdAtDepth[currentTargetDepth] + 1,false);
+                    }
+                    break;
+                case "a"://←
+                    if(currentTargetDepth > 0){
+                        deleteStepList(currentTargetDepth);
+                        currentTargetDepth -= 1;
+                    }
+                    break;
+                case "d"://→
+                    if(true){
+                        displayStepList(currentTargetDepth + 1);
+                        currentTargetDepth += 1;
+                    }
+                    break;
             }
         }
     });

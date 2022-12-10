@@ -89,4 +89,8 @@ export class HashiController{
     public getResultLog():ResultLog[]{
         return this.hashiBoard.getResultLogArr();
     }
+
+    public getBoardAbst():number[][]{
+        return this.hashiBoard.getBoardAbst();
+    }
 }
