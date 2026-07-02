@@ -1,255 +1,369 @@
-
 import { HashiController } from "./solver/HashiController";
-import { CanvasDrawer } from "./input/CanvasDrawer";
-import { UiConstants as uc } from "./input/UiConstants";
+import { CanvasController } from "./input/CanvasController";
 import { ResultLog } from "./solver/ResultLog";
 import { InputLog } from "./input/inputLog";
 import { HashiBaseConstants as hbc } from "./solver/HashiBaseConstants";
+import { InputType } from "./common/Types";
 
+const bodyElement = document.getElementById("body") as HTMLBodyElement;
+const autoImport = document.getElementById("autoImport") as HTMLInputElement;
+const importButton = document.getElementById("importButton") as HTMLButtonElement;
+const autoSolve = document.getElementById("autoSolve") as HTMLInputElement;
+const solveButton = document.getElementById("solveButton") as HTMLButtonElement;
+const urlElement = document.getElementById("url") as HTMLInputElement;
+const solveDepthElement = document.getElementById("solveDepth") as HTMLInputElement;
+const stepElement = document.getElementById("divStep") as HTMLElement;
 
-    const bodyElement:HTMLBodyElement = document.getElementById("body") as HTMLBodyElement;
+type StepColumnKind = "main" | "parent" | "current";
 
-    const autoImport:HTMLInputElement = document.getElementById("autoImport") as HTMLInputElement;
-    let autoImportFlg:boolean =  autoImport.checked;
-    let tempUrlIn:string = "";
-    let tempUrlOut:string = "";
-    let tempDepthIn:string = "";
-    let tempDepthOut:string = "";
-    const importButton:HTMLButtonElement = document.getElementById("importButton") as HTMLButtonElement;
+let autoImportFlg = autoImport.checked;
+let autoSolveFlg = autoSolve.checked;
+let tempUrlIn = "";
+let tempUrlOut = "";
+let tempDepthIn = "";
+let tempDepthOut = "";
 
-    const autoSolve:HTMLInputElement = document.getElementById("autoSolve") as HTMLInputElement;
-    let autoSolveFlg:boolean =  autoSolve.checked;
-    const solveButton:HTMLButtonElement = document.getElementById("solveButton") as HTMLButtonElement;
+let stepListAtDepth: HTMLElement[] = [];
+let currentTargetLiAtDepth: HTMLElement[] = [];
+let currentTargetStepIdAtDepth: number[] = [-1];
+let currentBranchIndexAtDepth: number[] = [];
+let currentTargetDepth = 0;
+let maxStepIdAtDepth: number[] = [0];
+let logsAtDepth: ResultLog[][] = [];
 
-    const urlElement:HTMLInputElement = document.getElementById("url") as HTMLInputElement;
-    const solveDepthElement:HTMLInputElement = document.getElementById("solveDepth") as HTMLInputElement
+let inputLog: InputLog[] = [];
+let hashiCtrl: HashiController;
+let solvedFlg = false;
+let drawer: CanvasController;
+let initFlg = false;
 
-    let stepElement:HTMLElement = document.getElementById("divStep") as HTMLElement;
-    let stepListAtDepth:HTMLElement[] = [];
-    let currentTargetLiAtDepth:HTMLElement[];
-    let currentTargetStepIdAtDepth:number[] = [-1];
-    let currentTargetDepth:number = 0;
-    let maxStepIdAtDepth:number[]=[0];
-    
-    let inputLog:InputLog[]=[];
-    let hashiCtrl:HashiController;
-    let initialBoard:number[][];
-    let solvedFlg:boolean =false;
-    let drawer:CanvasDrawer;
-    let initFlg:boolean = false;
+function initialDisplay(): void {
+    autoImport.checked = true;
+    autoImportFlg = true;
+    importButton.style.visibility = "hidden";
+    autoSolve.checked = true;
+    autoSolveFlg = true;
+    solveButton.style.visibility = "hidden";
+}
 
-    bodyElement.onload = function initialDisplay(){
-        autoImport.checked = true;
-        autoImportFlg = true;
-        importButton.style.visibility="hidden"
-        autoSolve.checked = true;
-        autoSolveFlg = true;
-        solveButton.style.visibility="hidden"
+function changeAutoImport(): void {
+    autoImportFlg = autoImport.checked;
+    importButton.style.visibility = autoImportFlg ? "hidden" : "visible";
+}
+
+function changeAutoSolve(): void {
+    autoSolveFlg = autoSolve.checked;
+    solveButton.style.visibility = autoSolveFlg ? "hidden" : "visible";
+}
+
+function checkUrl(url: string): boolean {
+    return url.length > 0;
+}
+
+function importUrl(): void {
+    const url = urlElement.value;
+    if (!checkUrl(url)) {
+        return;
     }
 
-    autoImport.onchange = function changeAutoImport():void{
-        autoImportFlg =   autoImport.checked;
-        if(autoImportFlg){
-            importButton.style.visibility="hidden"
-        }else{
-            importButton.style.visibility="visible"
-        }
+    solvedFlg = false;
+    if (initFlg) {
+        inputLog.splice(0);
+        drawer.clearAll();
     }
 
-    autoSolve.onchange = function changeAutoSolve():void{
-        autoSolveFlg =   autoSolve.checked;
-        if(autoSolveFlg){
-            solveButton.style.visibility="hidden"
-        }else{
-            solveButton.style.visibility="visible"
-        }
-    }
+    hashiCtrl = new HashiController(url);
+    inputLog.push(new InputLog(hbc.resultCode.rcI00, InputType.url, url));
+    drawer = new CanvasController(hashiCtrl);
+    initFlg = true;
+    resetStepState();
 
-    urlElement.addEventListener('focusin',(ev) => {
-        tempUrlIn = urlElement.value;
-    });
-
-    urlElement.addEventListener('focusout',(ev) => {
-        tempUrlOut = urlElement.value;
-        if(tempUrlIn != tempUrlOut && autoImportFlg){
-            importUrl();
-        }
-    });
-
-    urlElement.addEventListener('keydown',(keyEvent)=>{
-        if(keyEvent.key==="Enter"){
-            solveDepthElement.focus();
-        }
-    });
-
-    
-    solveDepthElement.addEventListener('focusin',(ev) => {
-        tempDepthIn = solveDepthElement.value;
-    });
-
-    solveDepthElement.addEventListener('focusout',(ev) => {
-        tempDepthOut = solveDepthElement.value;
-        if(tempDepthIn != tempDepthOut && autoImportFlg){
-            importUrl();
-        }
-    });
-
-    solveDepthElement.addEventListener('keydown',(keyEvent)=>{
-        if(keyEvent.key==="enter"){
-            urlElement.focus();
-        }
-    });
-
-    //urlElement.onchange = function importUrlIfAuto():void{
-    //    if(autoImportFlg){
-    //        importUrl();
-    //    }
-    //}
-
-    importButton.onclick = function (){
-        importUrl();
-    }
-
-    function importUrl():void{
-        const url:string = urlElement.value;
-        //url文字列チェックに引っ掛かったら中断
-        if(!checkUrl(url)){
-            return
-        }
-        solvedFlg = false;
-        if(initFlg){
-            inputLog.splice(0);
-            drawer.clearAll();
-        }
-        hashiCtrl = new HashiController(url);
-        initialBoard = hashiCtrl.getBoardAbst();
-        inputLog.push(new InputLog([],[],url,hbc.resultCode.rcI00));
-        drawer = new CanvasDrawer(hashiCtrl);
-        initFlg = true;
-
-
-        if(autoSolveFlg){
-            solve();
-        }
-    }
-
-    function checkUrl(url:string):boolean{
-        //URLチェックが必要であれば適宜追記する
-        if(url.length===0){
-            return false;
-        }
-
-        return true;
-    }
-
-    solveButton.onclick = function(){
+    if (autoSolveFlg) {
         solve();
     }
+}
 
-    function solve():void{
-        const depthStr:string = solveDepthElement.value;
-        let depth:number;
-        if(depthStr.length===0){
-            depth = 4;
-        }else{
-            depth = Number(depthStr);
-        }
-        hashiCtrl.solve(depth);
-        solvedFlg=true;
-        drawer.drawAllResult(0,hashiCtrl.getResultLog(),uc.DrawType.solverLog);
-        displayStepList(0);
-        currentTargetDepth = 0;
+function solve(): void {
+    const depthStr = solveDepthElement.value;
+    const depth = depthStr.length === 0 ? 4 : Number(depthStr);
+    hashiCtrl.solve(depth);
+    solvedFlg = true;
+    resetStepState();
+    ensureLogsForDepth(0);
+    const rootLogs = logsAtDepth[0] ?? [];
+    renderVisibleColumns();
+    if (rootLogs.length > 0) {
+        const lastStep = rootLogs.length - 1;
+        displayStep(0, lastStep, false);
+    }
+}
+
+function resetStepState(): void {
+    stepElement.replaceChildren();
+    stepListAtDepth = [];
+    currentTargetLiAtDepth = [];
+    currentTargetStepIdAtDepth = [-1];
+    currentBranchIndexAtDepth = [];
+    currentTargetDepth = 0;
+    maxStepIdAtDepth = [0];
+    logsAtDepth = [];
+}
+
+function getLogsForDepth(depth: number): ResultLog[] {
+    if (depth === 0) {
+        return hashiCtrl.getResultLog();
     }
 
-    function displayStepList(depth:number):void{
-        //描画済みリストを削
-        deleteStepList(depth);
-
-        //描画対象リストを作成
-        let targetDiv:HTMLElement;
-        targetDiv = document.createElement("div");
-        targetDiv.classList.add("stepListDiv");
-        stepElement.appendChild(targetDiv);
-        let targetUl:HTMLElement = document.createElement("ul");
-        stepListAtDepth.push(targetUl);
-        targetUl.style.paddingTop = String(currentTargetStepIdAtDepth.reduce((prev,cur)=>prev + cur,0) * uc.gridSize) + "px";
-        /**
-        while(targetStepList.firstChild !== null){
-            targetStepList.removeChild(targetStepList.firstChild);
-        }
-        */
-        //targetUl.style.height=String(uc.gridSize*hashiCtrl.getBoardSize()[0]+"px");
-        currentTargetStepIdAtDepth[depth] = -1;
-        let targetLogList:ResultLog[] = hashiCtrl.getResultLog();
-        if(currentTargetDepth > 0){
-            for(let i:number = 1; i <= depth; i++){
-                targetLogList =  targetLogList[currentTargetStepIdAtDepth[i]].getTryLog();
-            }
-        }
-        maxStepIdAtDepth.push(targetLogList.length -1);
-        let stepLength:number = String(maxStepIdAtDepth[depth]).length;
-        targetLogList.forEach((log, i)=>{
-            const li:HTMLElement = document.createElement("li");
-            li.id="depth" + String(depth) + "step" + String(i);
-            li.setAttribute("depth",String(depth));
-            li.addEventListener("click",(ev)=>displayStep(depth,i,true));
-            li.classList.add("step");
-            li.appendChild(document.createTextNode(("00000000" + String(i+1)).slice(-stepLength) + ": " +log.getResultCode()));
-            targetUl.appendChild(li);
-        });
+    const parentLogs = logsAtDepth[depth - 1] ?? [];
+    const parentStep = currentTargetStepIdAtDepth[depth - 1];
+    const parentLog = parentLogs[parentStep];
+    if (!parentLog) {
+        return [];
     }
 
-    function deleteStepList(depth:number):void{
-        stepListAtDepth.splice(depth).forEach(elm=>{
-            stepElement.removeChild(elm.parentNode as ParentNode); 
-        });
-        currentTargetLiAtDepth.splice(depth);
-        currentTargetStepIdAtDepth.splice(depth);
-        maxStepIdAtDepth.splice(depth);
+    const branchIndex = currentBranchIndexAtDepth[depth] ?? 0;
+    return parentLog.getBranches()[branchIndex]?.logs ?? [];
+}
+
+function ensureLogsForDepth(depth: number): ResultLog[] {
+    if (logsAtDepth[depth]) {
+        return logsAtDepth[depth];
     }
 
-    function displayStep(depth:number,step:number,clickFlg:boolean):void{
-        if(currentTargetLiAtDepth.length > depth){
-            currentTargetLiAtDepth[depth].classList.remove("targetStep");
-        }
-        const stepLi:HTMLElement = document.getElementById("depth" + String(depth) + "step" + String(step)) as HTMLElement;
-        stepLi.classList.add("targetStep");
-        const positionCount:number = step-5;
-        if(!clickFlg){
-            stepListAtDepth[depth].scrollTo(0,positionCount*20);
-        }
-        drawer.drawSteps(depth,step);
-        currentTargetLiAtDepth.push(stepLi);
-        currentTargetStepIdAtDepth.push(step);
+    const targetLogs = getLogsForDepth(depth);
+    logsAtDepth[depth] = targetLogs;
+    maxStepIdAtDepth[depth] = targetLogs.length - 1;
+    drawer.setResultLogs(depth, targetLogs);
+    return targetLogs;
+}
+
+function getVisibleDepths(): number[] {
+    if (currentTargetDepth <= 0) {
+        return [0];
+    }
+    if (currentTargetDepth === 1) {
+        return [0, 1];
+    }
+    return [0, currentTargetDepth - 1, currentTargetDepth];
+}
+
+function getColumnKind(depth: number): StepColumnKind {
+    if (depth === 0) {
+        return "main";
+    }
+    if (depth === currentTargetDepth) {
+        return "current";
+    }
+    return "parent";
+}
+
+function getColumnTitle(depth: number, kind: StepColumnKind): string {
+    if (kind === "main") {
+        return "main";
     }
 
-    document.addEventListener("keydown",(keyEvent)=>{
-        if(solvedFlg){
-            switch(keyEvent.key){
-                case "w": //↑
-                    if(currentTargetStepIdAtDepth[currentTargetDepth] > 0){
-                        displayStep(currentTargetDepth,currentTargetStepIdAtDepth[currentTargetDepth] - 1,false);
-                    }
-                    break;
-                case "s": //↓
-                    if(currentTargetStepIdAtDepth[currentTargetDepth] === -1){
-                        displayStep(currentTargetDepth,0,false)
-                    }else if(currentTargetStepIdAtDepth[currentTargetDepth] < maxStepIdAtDepth[currentTargetDepth]){
-                        displayStep(currentTargetDepth,currentTargetStepIdAtDepth[currentTargetDepth] + 1,false);
-                    }
-                    break;
-                case "a"://←
-                    if(currentTargetDepth > 0){
-                        deleteStepList(currentTargetDepth);
-                        currentTargetDepth -= 1;
-                    }
-                    break;
-                case "d"://→
-                    if(true){
-                        displayStepList(currentTargetDepth + 1);
-                        currentTargetDepth += 1;
-                    }
-                    break;
-            }
+    const branchIndex = currentBranchIndexAtDepth[depth] ?? 0;
+    const parentLog = logsAtDepth[depth - 1]?.[currentTargetStepIdAtDepth[depth - 1]];
+    const branch = parentLog?.getBranches()[branchIndex];
+    const role = kind === "parent" ? "parent" : "current";
+    if (!branch) {
+        return role;
+    }
+    return role + " branch " + String(branchIndex + 1) + ": " + branch.label + " / " + branch.outcome;
+}
+
+function renderVisibleColumns(): void {
+    stepElement.replaceChildren();
+    stepListAtDepth = [];
+    currentTargetLiAtDepth = [];
+
+    getVisibleDepths().forEach((depth) => renderStepColumn(depth, getColumnKind(depth)));
+}
+
+function renderStepColumn(depth: number, kind: StepColumnKind): void {
+    const targetLogs = ensureLogsForDepth(depth);
+    const targetDiv = document.createElement("div");
+    targetDiv.classList.add("stepListDiv", "stepListDiv-" + kind);
+    stepElement.appendChild(targetDiv);
+
+    const targetUl = document.createElement("ul");
+    targetUl.classList.add("stepList");
+    stepListAtDepth[depth] = targetUl;
+    targetDiv.appendChild(targetUl);
+
+    const columnLabel = document.createElement("li");
+    columnLabel.classList.add("branchHeader", "branchHeader-" + kind);
+    columnLabel.appendChild(document.createTextNode(getColumnTitle(depth, kind)));
+    targetUl.appendChild(columnLabel);
+
+    maxStepIdAtDepth[depth] = targetLogs.length - 1;
+    const stepLength = String(Math.max(maxStepIdAtDepth[depth] + 1, 1)).length;
+
+    targetLogs.forEach((log, i) => {
+        const li = document.createElement("li");
+        li.id = "depth" + String(depth) + "step" + String(i);
+        li.setAttribute("depth", String(depth));
+        li.addEventListener("click", () => displayStep(depth, i, true));
+        li.classList.add("step", "step-" + kind);
+
+        if (currentTargetStepIdAtDepth[depth] === i) {
+            li.classList.add("targetStep");
+            currentTargetLiAtDepth[depth] = li;
         }
+
+        const stepText = document.createElement("span");
+        stepText.classList.add("stepText");
+        stepText.appendChild(document.createTextNode(("00000000" + String(i + 1)).slice(-stepLength) + ": " + log.getResultCode()));
+        li.appendChild(stepText);
+
+        const branches = log.getBranches();
+        if (branches.length > 0) {
+            const branchControls = document.createElement("span");
+            branchControls.classList.add("branchControls");
+            branches.forEach((branch, branchIndex) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.classList.add("branchButton", "branchButton-" + branch.outcome);
+                button.title = branch.label + " / " + branch.outcome;
+                button.appendChild(document.createTextNode(String(branchIndex + 1)));
+                button.addEventListener("click", (ev) => {
+                    ev.stopPropagation();
+                    displayStep(depth, i, true);
+                    enterBranch(branchIndex);
+                });
+                branchControls.appendChild(button);
+            });
+            li.appendChild(branchControls);
+        }
+        targetUl.appendChild(li);
     });
+}
+
+function trimStateAfterDepth(depth: number): void {
+    currentTargetLiAtDepth.splice(depth);
+    currentTargetStepIdAtDepth.splice(depth);
+    currentBranchIndexAtDepth.splice(depth);
+    maxStepIdAtDepth.splice(depth);
+    logsAtDepth.splice(depth);
+}
+
+function displayStep(depth: number, step: number, clickFlg: boolean): void {
+    ensureLogsForDepth(depth);
+    currentTargetStepIdAtDepth[depth] = step;
+    currentTargetDepth = depth;
+    trimStateAfterDepth(depth + 1);
+    drawer.drawSteps(currentTargetStepIdAtDepth.slice(0, depth + 1));
+    renderVisibleColumns();
+
+    if (!clickFlg) {
+        currentTargetLiAtDepth[depth]?.scrollIntoView({ block: "center" });
+    }
+}
+
+function enterBranch(branchIndex = 0): void {
+    const currentLogs = logsAtDepth[currentTargetDepth] ?? [];
+    const currentStep = currentTargetStepIdAtDepth[currentTargetDepth];
+    const currentLog = currentLogs[currentStep];
+    const branch = currentLog?.getBranches()[branchIndex];
+    if (!branch) {
+        return;
+    }
+
+    const nextDepth = currentTargetDepth + 1;
+    currentBranchIndexAtDepth[nextDepth] = branchIndex;
+    logsAtDepth[nextDepth] = branch.logs;
+    maxStepIdAtDepth[nextDepth] = branch.logs.length - 1;
+    drawer.setResultLogs(nextDepth, branch.logs);
+    currentTargetDepth = nextDepth;
+
+    if (branch.logs.length > 0) {
+        currentTargetStepIdAtDepth[nextDepth] = branch.logs.length - 1;
+    } else {
+        currentTargetStepIdAtDepth[nextDepth] = -1;
+    }
+    drawer.drawSteps(currentTargetStepIdAtDepth.slice(0, nextDepth + 1));
+    renderVisibleColumns();
+    currentTargetLiAtDepth[nextDepth]?.scrollIntoView({ block: "center" });
+}
+
+function moveStep(offset: number): void {
+    if (!solvedFlg) {
+        return;
+    }
+    const currentStep = currentTargetStepIdAtDepth[currentTargetDepth];
+    const nextStep = currentStep === -1 ? 0 : currentStep + offset;
+    if (nextStep >= 0 && nextStep <= maxStepIdAtDepth[currentTargetDepth]) {
+        displayStep(currentTargetDepth, nextStep, false);
+    }
+}
+
+initialDisplay();
+
+autoImport.addEventListener("change", changeAutoImport);
+autoSolve.addEventListener("change", changeAutoSolve);
+importButton.addEventListener("click", importUrl);
+solveButton.addEventListener("click", solve);
+
+urlElement.addEventListener("focusin", () => {
+    tempUrlIn = urlElement.value;
+});
+urlElement.addEventListener("focusout", () => {
+    tempUrlOut = urlElement.value;
+    if (tempUrlIn !== tempUrlOut && autoImportFlg) {
+        importUrl();
+    }
+});
+urlElement.addEventListener("keydown", (keyEvent) => {
+    if (keyEvent.key === "Enter") {
+        solveDepthElement.focus();
+    }
+});
+
+solveDepthElement.addEventListener("focusin", () => {
+    tempDepthIn = solveDepthElement.value;
+});
+solveDepthElement.addEventListener("focusout", () => {
+    tempDepthOut = solveDepthElement.value;
+    if (tempDepthIn !== tempDepthOut && autoImportFlg) {
+        importUrl();
+    }
+});
+solveDepthElement.addEventListener("keydown", (keyEvent) => {
+    if (keyEvent.key === "Enter") {
+        urlElement.focus();
+    }
+});
+
+document.addEventListener("keydown", (keyEvent) => {
+    if (!solvedFlg) {
+        return;
+    }
+    switch (keyEvent.key) {
+        case "w":
+            moveStep(-1);
+            break;
+        case "s":
+            moveStep(1);
+            break;
+        case "a":
+            if (currentTargetDepth > 0) {
+                currentTargetDepth -= 1;
+                drawer.drawSteps(currentTargetStepIdAtDepth.slice(0, currentTargetDepth + 1));
+                renderVisibleColumns();
+                currentTargetLiAtDepth[currentTargetDepth]?.scrollIntoView({ block: "center" });
+            }
+            break;
+        case "d":
+            enterBranch(0);
+            break;
+        default:
+            if (/^[1-9]$/.test(keyEvent.key)) {
+                enterBranch(Number(keyEvent.key) - 1);
+            }
+            break;
+    }
+});
+
+bodyElement.dataset.initialized = "true";
+
+

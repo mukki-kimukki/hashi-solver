@@ -285,7 +285,7 @@ export class HashiBoard {
 			this.resultLogArr[depth].push(new ResultLog([],[tryTargetId,tryTargetId2],[hbc.default4way.minus1[dir],hbc.default4way.minus1[(dir + 2) % 4]],"1T1S"));
 			solveResultCode = this.logicSolve(depth,false);
 			if(solveResultCode.charAt(0) == "9"){
-				this.resultLogArr[depth - 1].push(new ResultLog([tryTargetId],[tryTargetId],[hbc.default4way.plus1[dir]],"1T19",this.resultLogArr[depth]));
+				this.resultLogArr[depth - 1].push(new ResultLog([tryTargetId],[tryTargetId],[hbc.default4way.plus1[dir]],"1T19",[ResultLog.branch("try-remain0", this.resultLogArr[depth], "contradiction")]));
 				// console.log("try-remain0 succeeded drawLine Id=" + tryTargetId + " dir= " + dir);
 				this.drawFrom(depth - 1,tryTargetId,1,dir);
 				return true;
@@ -299,7 +299,7 @@ export class HashiBoard {
 				while(this.trialSolve(depth + 1,maxDepth)){
 					solveResultCode = this.logicSolve(depth,false);
 					if(solveResultCode.charAt(0) == "9"){
-						this.resultLogArr[depth - 1].push(new ResultLog([],[tryTargetId],[hbc.default4way.plus1[dir]],"1T39",this.resultLogArr[depth]));
+						this.resultLogArr[depth - 1].push(new ResultLog([],[tryTargetId],[hbc.default4way.plus1[dir]],"1T39",[ResultLog.branch("try-remain0-nested", this.resultLogArr[depth], "contradiction")]));
 						this.drawFrom(depth - 1,tryTargetId,1,dir);
 						return true;
 					}else if(solveResultCode =="010"){
@@ -325,7 +325,7 @@ export class HashiBoard {
 			if(solveResultCode.charAt(0) == "9"){
 				let nextTarget = this.getDepthNum(depth - 1,tryTargetId);
 				let nextTarget2 = this.getDepthNum(depth - 1,tryTargetId2);
-				this.resultLogArr[depth - 1].push(new ResultLog([tryTargetId],[tryTargetId,tryTargetId2],[hbc.default4way.minus1[dir],hbc.default4way.minus1[(dir + 2) % 4]],"1T29",this.resultLogArr[depth]));
+				this.resultLogArr[depth - 1].push(new ResultLog([tryTargetId],[tryTargetId,tryTargetId2],[hbc.default4way.minus1[dir],hbc.default4way.minus1[(dir + 2) % 4]],"1T29",[ResultLog.branch("try-draw", this.resultLogArr[depth], "contradiction")]));
 				// console.log("try draw succeeded id= " + tryTargetId + "id2 = " + tryTargetId2);
 				nextTarget.setRemain1way(dir,0);
 				nextTarget2.setRemain1way((dir + 2) % 4,0);
@@ -909,5 +909,6 @@ export class HashiBoard {
 	}
 	
 }
+
 
 

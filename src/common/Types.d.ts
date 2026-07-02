@@ -15,3 +15,28 @@
         x:number,
         y:number,
     };
+
+    export function isAddress(arg: any): arg is Address {
+        return arg.x !== undefined;
+    }
+    export type AddrNumSet = [Address,number];
+
+    
+    export const DrawType = {
+        input:"input",
+        solver:"solver",
+    } as const;
+    export type DrawType = typeof DrawType[keyof typeof DrawType]; 
+    export const DrawColorType = {
+        normal:"normal",
+        trial:"trial",
+        highlight:"highlight",
+    } as const;
+    export type DrawColorType = typeof DrawColorType[keyof typeof DrawColorType]; 
+    export const InputType = {
+        lines:"lines",
+        number:"number",
+        url:"url",
+        board:"board",
+    } as const;
+    export type InputType = typeof InputType[keyof typeof InputType]; 
