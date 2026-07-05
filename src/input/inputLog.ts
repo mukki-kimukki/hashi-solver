@@ -1,22 +1,23 @@
 
 import { UiConstants as uc } from "./UiConstants";
+import { Address, InputType, isAddress } from "../common/Types";
 export class InputLog {
-    private readonly rootAddress:number[]|undefined;
-    /**セットした数字 / URL / 盤面地図 / 線の引き先リスト([[x0, y0], [x1, y1],...]) */
-    private readonly boardInput:number|string|number[][];
-    private readonly inputType:uc.InputType;
+    private readonly rootAddress:Address|undefined;
+    /**セットした数字 / URL / 盤面地図 / 線の引き先リスト([Address0, Address1,...]) */
+    private readonly boardInput:number|string|number[][]|Address[];
+    private readonly inputType:InputType;
     private readonly inputCode:string;
     private tryLog:InputLog[]=[];
     /**
-     * @param inputCode  
+     * @param inputCode  入力内容のコード値
      * @param inputType  UiConstants.InputType
-     * @param boardInput セットした数字 / URL / 盤面地図 / 線の引き先リスト([[x0, y0], [x1, y1],...])
+     * @param boardInput セットした数字 / URL / 盤面地図 / 線の引き先リスト([Address0, Address1,...])
      * @param rootAddress [x, y]形式で線の引き元または数字マスの設定先を設定 
      */
-    constructor(inputCode:string,inputType:uc.InputType,boardInput:number|string|number[][],rootAddress?:number[]){
+    constructor(inputCode:string,inputType:InputType,boardInput:number|string|number[][]|Address[],rootAddress?:Address){
         //入力チェック
         switch(inputType){
-            case uc.InputType.number:
+            case InputType.number:
                 if(typeof boardInput !== "number"){
                     throw new TypeError("指定した形式「" + inputType + "」に対して、boardInputの型がnumberではありません。");
                 }
@@ -26,23 +27,26 @@ export class InputLog {
                     this.rootAddress = rootAddress;
                 }
                 break;
-            case uc.InputType.url:
+            case InputType.url:
                 if(typeof boardInput !== "string"){
                     throw new TypeError("指定した形式「" + inputType + "」に対して、boardInputの型がstringではありません。");
                 }
                 break;
-            case uc.InputType.lines:
+            case InputType.lines:
                 if(typeof rootAddress === "undefined"){
                     throw new TypeError("指定した形式「" + inputType + "に対して、引数「rootAddress」が不足しています。")
+                }else if(!Array.isArray(boardInput)){
+                    throw new TypeError("指定した形式「" + inputType + "に対して、引数「boardInput」の型がany[]ではありません。")
+                }else　if(!isAddress(boardInput[0])){
+                    throw new TypeError("指定した形式「" + inputType + "に対して、引数「boardInput」の型がAddress[]ではありません。")
                 }else{
                     this.rootAddress = rootAddress;
                 }
-            case uc.InputType.board:
-                try {
-                    if(typeof (boardInput as number[][])[0][0] !== "number"){
-                        throw new TypeError()
-                    }
-                } catch (error) {
+                break;
+            case InputType.board:
+                if(!Array.isArray(boardInput)){
+                    throw new TypeError("指定した形式「" + inputType + "に対して、引数「boardInput」の型がany[]ではありません。")
+                }else if (!Array.isArray(boardInput[0])){
                     throw new TypeError("指定した形式「" + inputType + "」に対して、boardInputの型がnumber[][]ではありません。");
                 }
                 break;
@@ -65,30 +69,27 @@ export class InputLog {
     public getInputCode():string{
         return this.inputCode;
     }
-    /**
-     * 
-     * @returns [x, y]
-     */
-    public getRootAddress():number[]{
+
+    public getRootAddress():Address{
         switch(this.inputType){
-            case uc.InputType.lines:
-            case uc.InputType.number:
-                return this.rootAddress as number[];
+            case InputType.lines:
+            case InputType.number:
+                return this.rootAddress as Address;
             default:
                 throw new TypeError("inputLogの形式が「lines」または「number」ではありません。")
         }
     }
-    /**引き先となるアドレスのリストを返す[[x0, y0], [x1, y1],...] */
-    public getToAddress():number[][]{
-        if(this.inputType !== uc.InputType.lines){
+    /**引き先となるアドレスのリストを返す[Address0, Address1,...] */
+    public getToAddress():Address[]{
+        if(this.inputType !== InputType.lines){
             throw new TypeError("inputLogの形式が「lines」ではありません。");
         }else{
-            return this.boardInput as number[][];
+            return this.boardInput as Address[];
         }
     }
 
     public getNumber():number {
-        if(this.inputType !== uc.InputType.number){
+        if(this.inputType !== InputType.number){
             throw new TypeError("inputLogの形式が「number」ではありません。");
         }else{
             return this.boardInput as number;
@@ -96,7 +97,7 @@ export class InputLog {
     }
 
     public getUrl():string{
-        if(this.inputType !== uc.InputType.url){
+        if(this.inputType !== InputType.url){
             throw new TypeError("inputLogの形式が「url」ではありません。");
         }else{
             return this.boardInput as string;
@@ -104,7 +105,7 @@ export class InputLog {
     }
         
     public getBoardAbst():number[][] {
-        if(this.inputType !== uc.InputType.board){
+        if(this.inputType !== InputType.board){
             throw new TypeError("inputLogの形式が「board」ではありません");
         }else{
             return this.boardInput as number[][];

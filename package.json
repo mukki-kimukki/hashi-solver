@@ -3,19 +3,26 @@
   "version": "1.0.0",
   "main": "index.js",
   "private": true,
+  "packageManager": "npm@10.9.3",
+  "engines": {
+    "node": ">=22.18.0",
+    "npm": ">=10.9.3"
+  },
   "scripts": {
-    "build": "webpack --mode=development -w",
-    "start": "webpack-dev-server --mode=development -w"
+    "build": "webpack --mode=development",
+    "watch": "webpack --mode=development --watch",
+    "start": "webpack serve --mode=development",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "ts-loader": "^9.3.0",
-    "typescript": "^4.7.3",
-    "webpack": "^5.73.0",
-    "webpack-cli": "^4.9.2",
-    "webpack-dev-server": "^3.11.3"
+    "ts-loader": "^9.6.2",
+    "typescript": "^6.0.3",
+    "webpack": "^5.108.3",
+    "webpack-cli": "^7.1.0",
+    "webpack-dev-server": "^5.2.5"
   },
   "dependencies": {
     "lodash": "^4.17.21"

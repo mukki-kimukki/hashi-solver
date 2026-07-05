@@ -78,10 +78,14 @@ export class HashiController{
         describe.forEach((row) => console.log(row.join('') + '\n'));
     }
 
-    public getBoardSize():number[]{
-        return [this.hashiBoard.getWidth(),this.hashiBoard.getHeight()];
+    public getWidth():number{
+        return this.hashiBoard.getWidth();
     }
 
+    public getHeight():number{
+        return this.hashiBoard.getHeight();
+    }
+    
     public getNumDict():Num[][]{
         return this.hashiBoard.getNumDict();
     }

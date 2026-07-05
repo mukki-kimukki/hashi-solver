@@ -2,3 +2,6 @@ node_modules
 *.js
 test.ts
 *.txt
+.vscode
+.codex*
+.agents*

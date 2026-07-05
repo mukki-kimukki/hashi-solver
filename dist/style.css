@@ -8,39 +8,119 @@
 }
 #divCanvas{
     position: relative;
-
+    flex: 0 0 auto;
 }
 .canvasArea{
     position:absolute;
 }
 .output{
     display: inline-flex;
+    align-items: flex-start;
+    gap: 12px;
+    vertical-align: top;
 }
 
 #divStep{
-    border-style: solid;
-    border: 2px;
-    border-color: black;
-    overflow-y: scroll;
+    display: inline-flex;
+    align-items: flex-start;
+    border: 2px solid black;
+    overflow: visible;
 }
 
 .stepList{
     list-style: none;
-    
+    max-height: 620px;
+    overflow-y: auto;
+    padding-left: 0;
+    margin: 0;
 }
 
 .stepListDiv{
     display: inline-flex;
+    border-right: 1px solid #bbb;
+}
+
+.stepListDiv:last-child{
+    border-right: 0;
 }
 
 .step{
-    width: 100px;
-    height: 20px;
-    border:1px;
+    width: 150px;
+    min-height: 22px;
+    border: 1px solid transparent;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .targetStep{
     background: #FAA;
-    border: 3px;
     border-color: tomato;
+}
+
+.stepText{
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.branchControls{
+    display: inline-flex;
+    gap: 2px;
+    flex: 0 0 auto;
+}
+
+.branchButton{
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid #777;
+    background: #fff;
+    color: #111;
+    font-size: 11px;
+    line-height: 16px;
+    cursor: pointer;
+}
+
+.branchButton:hover{
+    background: #eee;
+}
+
+.branchButton-contradiction{
+    border-color: #a44;
+    color: #822;
+}
+
+.branchButton-solved{
+    border-color: #276;
+    color: #165;
+}
+
+.branchHeader{
+    width: 150px;
+    min-height: 24px;
+    box-sizing: border-box;
+    padding: 3px 4px;
+    border-bottom: 1px solid #999;
+    color: #333;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.branchHeader-main{
+    background: #eef3f7;
+}
+
+.branchHeader-parent{
+    background: #f4f4f4;
+}
+
+.branchHeader-current{
+    background: #fff1e8;
 }
