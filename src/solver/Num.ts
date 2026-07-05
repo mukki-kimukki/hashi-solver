@@ -475,7 +475,7 @@ export class Num {
 	 * @param
 	 * @return [線の引き先方向ごとの本数,結果コード]
 	 */
-	private logic6(remain1count:number,isEndSurCount:N4way):[N4way,string]{
+	private logic6(remain1count:number,isEndSurCount:number[]):[N4way,string]{
 		if(remain1count == 1){	//1隣接6
 			//行き止まり2が3方向、かつ、残り1の方向にまだ線を引いていない場合は追加で引ける
 			if(isEndSurCount[2] == 3 && this.hands4way[this.remain4way.findIndex((val:number)=>val==1)] == 0){
@@ -494,7 +494,7 @@ export class Num {
 			}
 		}
 	}
-	private logic5(remain0count:number,remain1count:number,isEndSurCount:N4way):[N4way,string]{
+	private logic5(remain0count:number,remain1count:number,isEndSurCount:number[]):[N4way,string]{
 		if(remain0count == 1){
 			return [hbc.default4way.one0[this.remain4way.findIndex((val :number) => val === 0)],"1501"];	//壁5
 		}else{
@@ -531,7 +531,7 @@ export class Num {
 			}
 		}
 	}
-	private logic4(remain0count:number,remain1count:number,isEndSurCount:N4way):[N4way,string]{
+	private logic4(remain0count:number,remain1count:number,isEndSurCount:number[]):[N4way,string]{
 		if(remain0count === 1){
 			if(remain1count === 1){
 				if(isEndSurCount[2] === 2 && isEndSurCount[0] === 1 && this.hands4way.findIndex((hon:number, i:number) => hon > 0 && !this.isEndSur[i][0]) < 0){
@@ -588,7 +588,7 @@ export class Num {
 			}
 		}
 	}
-	private logic3(remain0count:number,remain1count:number,isEndSurCount:N4way):[N4way,string]{
+	private logic3(remain0count:number,remain1count:number,isEndSurCount:number[]):[N4way,string]{
 		switch(remain0count){
 			case 2:
 				return [this.remain4way.map((hon:number) => Number(hon>0)),"1301"];	//壁以外に一本ずつ
@@ -666,7 +666,7 @@ export class Num {
 				}
 		}
 	}
-	private logic2(remain0count:number,remain1count:number,isEndSurCount:N4way):[N4way,string]{
+	private logic2(remain0count:number,remain1count:number,isEndSurCount:number[]):[N4way,string]{
 		switch(remain0count){
 			case 2:
 				if(isEndSurCount[0] === 2){
@@ -760,7 +760,7 @@ export class Num {
 				}
 		}
 	}
-	private logic1(remain0count:number,isEndSurCount:N4way):[N4way,string]{
+	private logic1(remain0count:number,isEndSurCount:number[]):[N4way,string]{
 		switch(remain0count){
 			case 3:
 				return [hbc.default4way.plus1[this.remain4way.findIndex((val :number) => val > 0)],"1101"];
